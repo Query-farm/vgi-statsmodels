@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="docs/vgi-logo.png" alt="Vector Gateway Interface (VGI)" width="320">
+</p>
+
+<p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
+
 # vgi-statsmodels
 
 A [VGI](https://query.farm) worker that brings **regression with full
@@ -101,3 +107,12 @@ uv run --no-sync ruff check . && uv run --no-sync mypy vgi_statsmodels/
 
 This worker is MIT. statsmodels and patsy are **BSD**; numpy and pandas are
 **BSD** — all permissive, no copyleft obligations.
+
+---
+
+## Authorship & License
+
+Written by [Query.Farm](https://query.farm) — every VGI worker is designed and built by Query.Farm.
+
+Copyright 2026 Query Farm LLC - https://query.farm
+
