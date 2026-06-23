@@ -34,3 +34,4 @@ lint:
 	uv run ruff format --check .
 	uv run ruff check .
 	uv run mypy vgi_statsmodels/
+	uvx pydoclint vgi_statsmodels/

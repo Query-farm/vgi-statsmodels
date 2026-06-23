@@ -123,5 +123,9 @@ jobs:
       - name: Type check (mypy)
         run: uv run --no-sync mypy vgi_statsmodels/
 
+      # Run pydoclint in an isolated tool env. vgi-rpc pulls in `docstring-parser`
+      # while pydoclint needs `docstring-parser-fork`; both ship the same
+      # `docstring_parser` module, so installing both into the project venv is a
+      # non-deterministic file collision. `uvx` gives pydoclint a clean env.
       - name: Docstring lint (pydoclint)
-        run: uv run --no-sync pydoclint vgi_statsmodels/
+        run: uvx pydoclint vgi_statsmodels/
