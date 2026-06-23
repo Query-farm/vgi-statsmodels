@@ -1,0 +1,89 @@
+# name: test/sql/statsmodels.test
+# description: Regression + inference table functions (ols, model_stats, ttest, ...)
+# group: [vgi_statsmodels]
+
+require-env VGI_STATSMODELS_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION '${VGI_STATSMODELS_WORKER}');
+
+# Deterministic linear data: y = 2 + 3*x + tiny deterministic wiggle. 60 points.
+# The wiggle (sin) is mean-~0 and small, so the OLS fit recovers coef≈3,
+# Intercept≈2 to one decimal while keeping a strong, real (non-degenerate) fit.
+statement ok
+CREATE TEMP TABLE d AS
+SELECT
+  i::DOUBLE AS x,
+  2.0 + 3.0 * i + 0.20 * sin(i) AS y
+FROM generate_series(0, 59) AS t(i);
+
+# OLS: slope x rounds to 3.0, Intercept rounds to 2.0, slope highly significant.
+query II
+SELECT round(coef, 1), p_value < 0.05
+FROM statsmodels.ols((SELECT x, y FROM d), formula := 'y ~ x')
+WHERE term = 'x';
+----
+3.0	true
+
+query I
+SELECT round(coef, 1)
+FROM statsmodels.ols((SELECT x, y FROM d), formula := 'y ~ x')
+WHERE term = 'Intercept';
+----
+2.0
+
+# Every OLS row carries a confidence interval that brackets the point estimate.
+query I
+SELECT count(*)
+FROM statsmodels.ols((SELECT x, y FROM d), formula := 'y ~ x')
+WHERE NOT (ci_lower <= coef AND coef <= ci_upper);
+----
+0
+
+# model_stats: r_squared is very high for this near-perfect linear data.
+query I
+SELECT round(value, 2) >= 0.99
+FROM statsmodels.model_stats((SELECT x, y FROM d), formula := 'y ~ x')
+WHERE statistic = 'r_squared';
+----
+true
+
+query I
+SELECT value = 60.0
+FROM statsmodels.model_stats((SELECT x, y FROM d), formula := 'y ~ x')
+WHERE statistic = 'nobs';
+----
+true
+
+# t-test: two clearly separated groups -> small p-value, positive mean_diff.
+statement ok
+CREATE TEMP TABLE g AS
+SELECT 1.0 * i AS value, 'a' AS arm FROM generate_series(0, 19) AS t(i)
+UNION ALL
+SELECT 100.0 + 1.0 * i AS value, 'b' AS arm FROM generate_series(0, 19) AS t(i);
+
+query I
+SELECT p_value < 0.05
+FROM statsmodels.ttest((SELECT value, arm FROM g), "column" := 'value', "group" := 'arm');
+----
+true
+
+# GLM gaussian agrees with OLS on the slope (rounds to 3.0).
+query I
+SELECT round(coef, 1)
+FROM statsmodels.glm((SELECT x, y FROM d), formula := 'y ~ x', family := 'gaussian')
+WHERE term = 'x';
+----
+3.0
+
+# Bad formula -> clear error, never a crash.
+statement error
+SELECT * FROM statsmodels.ols((SELECT x, y FROM d), formula := 'y ~~ x');
+----
+invalid formula
+
+statement ok
+DETACH statsmodels;
