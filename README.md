@@ -4,7 +4,9 @@
 
 <p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
 
-# vgi-statsmodels
+# Regression with Inference (p-Values, CIs) & Hypothesis Tests in DuckDB
+
+> **vgi-statsmodels** · a [Query.Farm](https://query.farm) VGI worker · powered by statsmodels
 
 A [VGI](https://query.farm) worker that brings **regression with full
 statistical inference** and **hypothesis tests** to DuckDB/SQL: OLS / logistic /
