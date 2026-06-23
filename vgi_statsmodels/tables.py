@@ -27,8 +27,9 @@ import pyarrow as pa
 from vgi.arguments import Arg, TableInput
 from vgi.invocation import BindResponse
 from vgi.metadata import FunctionExample
-from vgi.table_buffering_function import OutputCollector, TableBufferingParams
+from vgi.table_buffering_function import TableBufferingParams
 from vgi.table_function import BindParams
+from vgi_rpc import OutputCollector
 
 from . import stats
 from .buffering import DrainState, SinkBuffer
@@ -108,12 +109,16 @@ _ADF_SCHEMA = pa.schema(
 
 @dataclass(slots=True, frozen=True)
 class FormulaArgs:
+    """Arguments for the formula-based fits (ols, model_stats, logit)."""
+
     data: Annotated[TableInput, Arg(0, doc="Relation; every column is available to the formula.")]
     formula: Annotated[str, Arg("formula", default="", doc="Patsy formula, e.g. 'y ~ x1 + x2'.")]
 
 
 @dataclass(slots=True, frozen=True)
 class GlmArgs:
+    """Arguments for the glm fit (formula plus an error family)."""
+
     data: Annotated[TableInput, Arg(0, doc="Relation; every column is available to the formula.")]
     formula: Annotated[str, Arg("formula", default="", doc="Patsy formula, e.g. 'y ~ x1 + x2'.")]
     family: Annotated[
@@ -128,6 +133,8 @@ class GlmArgs:
 
 @dataclass(slots=True, frozen=True)
 class TTestArgs:
+    """Arguments for the two-sample t-test (value column and group column)."""
+
     data: Annotated[TableInput, Arg(0, doc="Relation containing the value and group columns.")]
     column: Annotated[str, Arg("column", default="value", doc="Numeric value column to compare.")]
     group: Annotated[str, Arg("group", default="group", doc="Grouping column with two levels.")]
@@ -135,6 +142,8 @@ class TTestArgs:
 
 @dataclass(slots=True, frozen=True)
 class AdfArgs:
+    """Arguments for the Augmented Dickey-Fuller test (ordered series column)."""
+
     data: Annotated[TableInput, Arg(0, doc="Ordered relation containing the series column.")]
     column: Annotated[str, Arg("column", default="value", doc="Numeric (time-ordered) series column.")]
 
@@ -150,6 +159,8 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
     FunctionArguments: ClassVar[type] = FormulaArgs
 
     class Meta:
+        """VGI function metadata for ols."""
+
         name = "ols"
         description = (
             "Ordinary least squares regression with full inference: emits "
@@ -166,12 +177,12 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
 
     @classmethod
     def on_bind(cls, params: BindParams[FormulaArgs]) -> BindResponse:
+        """Declare the fixed output schema for this function."""
         return BindResponse(output_schema=_OLS_SCHEMA)
 
     @classmethod
-    def initial_finalize_state(
-        cls, finalize_state_id: bytes, params: TableBufferingParams[FormulaArgs]
-    ) -> DrainState:
+    def initial_finalize_state(cls, finalize_state_id: bytes, params: TableBufferingParams[FormulaArgs]) -> DrainState:
+        """Start each finalize stream with a fresh single-emit cursor."""
         return DrainState()
 
     @classmethod
@@ -182,6 +193,7 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
         state: DrainState,
         out: OutputCollector,
     ) -> None:
+        """Run the OLS fit over the buffered relation and emit its term table."""
         if state.done:
             out.finish()
             return
@@ -197,6 +209,8 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
     FunctionArguments: ClassVar[type] = FormulaArgs
 
     class Meta:
+        """VGI function metadata for model_stats."""
+
         name = "model_stats"
         description = (
             "OLS whole-model fit statistics as (statistic, value) rows: "
@@ -213,12 +227,12 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
 
     @classmethod
     def on_bind(cls, params: BindParams[FormulaArgs]) -> BindResponse:
+        """Declare the fixed output schema for this function."""
         return BindResponse(output_schema=_MODEL_STATS_SCHEMA)
 
     @classmethod
-    def initial_finalize_state(
-        cls, finalize_state_id: bytes, params: TableBufferingParams[FormulaArgs]
-    ) -> DrainState:
+    def initial_finalize_state(cls, finalize_state_id: bytes, params: TableBufferingParams[FormulaArgs]) -> DrainState:
+        """Start each finalize stream with a fresh single-emit cursor."""
         return DrainState()
 
     @classmethod
@@ -229,6 +243,7 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
         state: DrainState,
         out: OutputCollector,
     ) -> None:
+        """Run the OLS fit and emit its whole-model statistics."""
         if state.done:
             out.finish()
             return
@@ -244,6 +259,8 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
     FunctionArguments: ClassVar[type] = FormulaArgs
 
     class Meta:
+        """VGI function metadata for logit."""
+
         name = "logit"
         description = (
             "Logistic (binary-outcome) regression with full inference: emits "
@@ -260,12 +277,12 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
 
     @classmethod
     def on_bind(cls, params: BindParams[FormulaArgs]) -> BindResponse:
+        """Declare the fixed output schema for this function."""
         return BindResponse(output_schema=_LOGIT_SCHEMA)
 
     @classmethod
-    def initial_finalize_state(
-        cls, finalize_state_id: bytes, params: TableBufferingParams[FormulaArgs]
-    ) -> DrainState:
+    def initial_finalize_state(cls, finalize_state_id: bytes, params: TableBufferingParams[FormulaArgs]) -> DrainState:
+        """Start each finalize stream with a fresh single-emit cursor."""
         return DrainState()
 
     @classmethod
@@ -276,6 +293,7 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
         state: DrainState,
         out: OutputCollector,
     ) -> None:
+        """Run the logistic fit over the buffered relation and emit its term table."""
         if state.done:
             out.finish()
             return
@@ -291,6 +309,8 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
     FunctionArguments: ClassVar[type] = GlmArgs
 
     class Meta:
+        """VGI function metadata for glm."""
+
         name = "glm"
         description = (
             "Generalized linear model with a 'family' arg "
@@ -300,22 +320,19 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
         categories = ["statistics", "regression"]
         examples = [
             FunctionExample(
-                sql=(
-                    "SELECT * FROM statsmodels.glm((SELECT y, x FROM d), "
-                    "formula := 'y ~ x', family := 'poisson')"
-                ),
+                sql=("SELECT * FROM statsmodels.glm((SELECT y, x FROM d), formula := 'y ~ x', family := 'poisson')"),
                 description="Poisson GLM of count y on x",
             )
         ]
 
     @classmethod
     def on_bind(cls, params: BindParams[GlmArgs]) -> BindResponse:
+        """Declare the fixed output schema for this function."""
         return BindResponse(output_schema=_GLM_SCHEMA)
 
     @classmethod
-    def initial_finalize_state(
-        cls, finalize_state_id: bytes, params: TableBufferingParams[GlmArgs]
-    ) -> DrainState:
+    def initial_finalize_state(cls, finalize_state_id: bytes, params: TableBufferingParams[GlmArgs]) -> DrainState:
+        """Start each finalize stream with a fresh single-emit cursor."""
         return DrainState()
 
     @classmethod
@@ -326,6 +343,7 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
         state: DrainState,
         out: OutputCollector,
     ) -> None:
+        """Run the GLM fit over the buffered relation and emit its term table."""
         if state.done:
             out.finish()
             return
@@ -342,6 +360,8 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
     FunctionArguments: ClassVar[type] = TTestArgs
 
     class Meta:
+        """VGI function metadata for ttest."""
+
         name = "ttest"
         description = (
             "Two-sample (pooled-variance) t-test of 'column' across the two "
@@ -352,22 +372,19 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
         categories = ["statistics", "test"]
         examples = [
             FunctionExample(
-                sql=(
-                    "SELECT * FROM statsmodels.ttest((SELECT v, g FROM d), "
-                    "\"column\" := 'v', \"group\" := 'g')"
-                ),
+                sql=("SELECT * FROM statsmodels.ttest((SELECT v, g FROM d), \"column\" := 'v', \"group\" := 'g')"),
                 description="Two-sample t-test across the group column",
             )
         ]
 
     @classmethod
     def on_bind(cls, params: BindParams[TTestArgs]) -> BindResponse:
+        """Declare the fixed output schema for this function."""
         return BindResponse(output_schema=_TTEST_SCHEMA)
 
     @classmethod
-    def initial_finalize_state(
-        cls, finalize_state_id: bytes, params: TableBufferingParams[TTestArgs]
-    ) -> DrainState:
+    def initial_finalize_state(cls, finalize_state_id: bytes, params: TableBufferingParams[TTestArgs]) -> DrainState:
+        """Start each finalize stream with a fresh single-emit cursor."""
         return DrainState()
 
     @classmethod
@@ -378,6 +395,7 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
         state: DrainState,
         out: OutputCollector,
     ) -> None:
+        """Run the two-sample t-test over the buffered relation and emit its row."""
         if state.done:
             out.finish()
             return
@@ -394,6 +412,8 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
     FunctionArguments: ClassVar[type] = AdfArgs
 
     class Meta:
+        """VGI function metadata for adfuller."""
+
         name = "adfuller"
         description = (
             "Augmented Dickey-Fuller unit-root (stationarity) test over an "
@@ -411,12 +431,12 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
 
     @classmethod
     def on_bind(cls, params: BindParams[AdfArgs]) -> BindResponse:
+        """Declare the fixed output schema for this function."""
         return BindResponse(output_schema=_ADF_SCHEMA)
 
     @classmethod
-    def initial_finalize_state(
-        cls, finalize_state_id: bytes, params: TableBufferingParams[AdfArgs]
-    ) -> DrainState:
+    def initial_finalize_state(cls, finalize_state_id: bytes, params: TableBufferingParams[AdfArgs]) -> DrainState:
+        """Start each finalize stream with a fresh single-emit cursor."""
         return DrainState()
 
     @classmethod
@@ -427,6 +447,7 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
         state: DrainState,
         out: OutputCollector,
     ) -> None:
+        """Run the ADF test over the buffered series and emit its row."""
         if state.done:
             out.finish()
             return

@@ -27,6 +27,9 @@ statsmodels and patsy are BSD-licensed; numpy/pandas are BSD-licensed.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -59,11 +62,12 @@ _GLM_FAMILIES = {
 
 
 class StatsError(ValueError):
-    """Raised for user-facing input problems (bad formula, missing/non-numeric
-    column, empty relation, singular design, unknown family).
+    """Raised for user-facing input problems.
 
-    A plain, explicit error so the worker surfaces a clear message to SQL
-    instead of crashing with an opaque statsmodels/patsy traceback.
+    Covers bad formula, missing/non-numeric column, empty relation, singular
+    design, and unknown family. A plain, explicit error so the worker surfaces a
+    clear message to SQL instead of crashing with an opaque statsmodels/patsy
+    traceback.
     """
 
 
@@ -75,8 +79,7 @@ def _require_nonempty(df: pd.DataFrame, what: str) -> None:
 def _require_column(df: pd.DataFrame, column: str, *, role: str) -> None:
     if column not in df.columns:
         raise StatsError(
-            f"{role} column '{column}' not found; input relation has columns: "
-            f"{', '.join(map(str, df.columns))}"
+            f"{role} column '{column}' not found; input relation has columns: {', '.join(map(str, df.columns))}"
         )
 
 
@@ -86,13 +89,12 @@ def _numeric(df: pd.DataFrame, column: str, *, role: str) -> np.ndarray:
     coerced = pd.to_numeric(series, errors="coerce")
     if coerced.isna().any() and not series.isna().any():
         raise StatsError(
-            f"{role} column '{column}' must be numeric, but contains "
-            f"non-numeric values (dtype {series.dtype})"
+            f"{role} column '{column}' must be numeric, but contains non-numeric values (dtype {series.dtype})"
         )
     return np.asarray(coerced, dtype=float)
 
 
-def _fit_linearish(builder, formula: str, df: pd.DataFrame, what: str):
+def _fit_linearish(builder: Callable[[str, pd.DataFrame], Any], formula: str, df: pd.DataFrame, what: str) -> Any:
     """Build + fit a formula model, translating patsy/statsmodels failures.
 
     ``builder`` is a callable ``(formula, data) -> results`` (already wrapping
@@ -113,7 +115,7 @@ def _fit_linearish(builder, formula: str, df: pd.DataFrame, what: str):
         ) from exc
 
 
-def _inference_block(result, *, stat_name: str) -> dict[str, list]:
+def _inference_block(result: Any, *, stat_name: str) -> dict[str, list[Any]]:
     """Common coefficient table: term, coef, std_err, stat, p, CI.
 
     ``stat_name`` is ``'t_value'`` for OLS, ``'z_value'`` for Logit/GLM. The
@@ -133,7 +135,7 @@ def _inference_block(result, *, stat_name: str) -> dict[str, list]:
     }
 
 
-def ols(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
+def ols(df: pd.DataFrame, *, formula: str) -> dict[str, list[Any]]:
     """Ordinary least squares regression with full inference.
 
     Args:
@@ -153,7 +155,7 @@ def ols(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
     return _inference_block(result, stat_name="t_value")
 
 
-def model_stats(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
+def model_stats(df: pd.DataFrame, *, formula: str) -> dict[str, list[Any]]:
     """Whole-model OLS fit statistics, one row per statistic.
 
     Args:
@@ -185,7 +187,7 @@ def model_stats(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
     return {"statistic": list(stats.keys()), "value": list(stats.values())}
 
 
-def logit(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
+def logit(df: pd.DataFrame, *, formula: str) -> dict[str, list[Any]]:
     """Logistic (binary-outcome) regression with full inference + odds ratios.
 
     The response must be binary (0/1, boolean, or two distinct values).
@@ -204,7 +206,7 @@ def logit(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
     """
     _require_nonempty(df, "logit")
 
-    def _build(f: str, d: pd.DataFrame):
+    def _build(f: str, d: pd.DataFrame) -> Any:
         try:
             return smf.logit(f, data=d).fit(disp=0)
         except np.linalg.LinAlgError as exc:
@@ -226,7 +228,7 @@ def logit(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
     return block
 
 
-def glm(df: pd.DataFrame, *, formula: str, family: str = "gaussian") -> dict[str, list]:
+def glm(df: pd.DataFrame, *, formula: str, family: str = "gaussian") -> dict[str, list[Any]]:
     """Generalized linear model with a selectable error family.
 
     Args:
@@ -253,7 +255,7 @@ def glm(df: pd.DataFrame, *, formula: str, family: str = "gaussian") -> dict[str
     return _inference_block(result, stat_name="z_value")
 
 
-def ttest(df: pd.DataFrame, *, column: str, group: str) -> dict[str, list]:
+def ttest(df: pd.DataFrame, *, column: str, group: str) -> dict[str, list[Any]]:
     """Two-sample (Welch-style independent) t-test across a group column.
 
     Compares the mean of ``column`` between the two distinct levels of
@@ -280,9 +282,7 @@ def ttest(df: pd.DataFrame, *, column: str, group: str) -> dict[str, list]:
 
     levels = list(pd.unique(df[group].dropna()))
     if len(levels) != 2:
-        raise StatsError(
-            f"ttest needs exactly two distinct groups in '{group}', found {len(levels)}: {levels}"
-        )
+        raise StatsError(f"ttest needs exactly two distinct groups in '{group}', found {len(levels)}: {levels}")
 
     values = _numeric(df, column, role="value")
     g = df[group].to_numpy()
@@ -307,7 +307,7 @@ def ttest(df: pd.DataFrame, *, column: str, group: str) -> dict[str, list]:
     }
 
 
-def adfuller(df: pd.DataFrame, *, column: str) -> dict[str, list]:
+def adfuller(df: pd.DataFrame, *, column: str) -> dict[str, list[Any]]:
     """Augmented Dickey-Fuller test for a unit root (non-stationarity).
 
     The input is treated as an *already-ordered* series -- pass an ordered
@@ -333,9 +333,7 @@ def adfuller(df: pd.DataFrame, *, column: str) -> dict[str, list]:
     series = _numeric(df, column, role="series")
     series = series[~np.isnan(series)]
     if len(series) < 6:
-        raise StatsError(
-            f"adfuller needs at least ~6 observations to estimate a unit root; got {len(series)}"
-        )
+        raise StatsError(f"adfuller needs at least ~6 observations to estimate a unit root; got {len(series)}")
     try:
         statistic, p_value, used_lag, n_obs, _crit, _icbest = sm_adfuller(series, autolag="AIC")
     except (ValueError, np.linalg.LinAlgError) as exc:
