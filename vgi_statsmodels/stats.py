@@ -209,8 +209,7 @@ def logit(df: pd.DataFrame, *, formula: str) -> dict[str, list]:
             return smf.logit(f, data=d).fit(disp=0)
         except np.linalg.LinAlgError as exc:
             raise StatsError(
-                f"could not fit logit for formula '{f}': {exc} "
-                f"(singular design or perfect separation)"
+                f"could not fit logit for formula '{f}': {exc} (singular design or perfect separation)"
             ) from exc
         except Exception as exc:  # statsmodels PerfectSeparationError etc.
             name = type(exc).__name__
@@ -248,13 +247,9 @@ def glm(df: pd.DataFrame, *, formula: str, family: str = "gaussian") -> dict[str
     _require_nonempty(df, "glm")
     key = (family or "gaussian").strip().lower()
     if key not in _GLM_FAMILIES:
-        raise StatsError(
-            f"unknown family '{family}'; choose one of: {', '.join(sorted(_GLM_FAMILIES))}"
-        )
+        raise StatsError(f"unknown family '{family}'; choose one of: {', '.join(sorted(_GLM_FAMILIES))}")
     fam = _GLM_FAMILIES[key]()
-    result = _fit_linearish(
-        lambda f, d: smf.glm(f, data=d, family=fam).fit(), formula, df, "glm"
-    )
+    result = _fit_linearish(lambda f, d: smf.glm(f, data=d, family=fam).fit(), formula, df, "glm")
     return _inference_block(result, stat_name="z_value")
 
 
@@ -286,8 +281,7 @@ def ttest(df: pd.DataFrame, *, column: str, group: str) -> dict[str, list]:
     levels = list(pd.unique(df[group].dropna()))
     if len(levels) != 2:
         raise StatsError(
-            f"ttest needs exactly two distinct groups in '{group}', "
-            f"found {len(levels)}: {levels}"
+            f"ttest needs exactly two distinct groups in '{group}', found {len(levels)}: {levels}"
         )
 
     values = _numeric(df, column, role="value")
@@ -340,8 +334,7 @@ def adfuller(df: pd.DataFrame, *, column: str) -> dict[str, list]:
     series = series[~np.isnan(series)]
     if len(series) < 6:
         raise StatsError(
-            f"adfuller needs at least ~6 observations to estimate a unit root; "
-            f"got {len(series)}"
+            f"adfuller needs at least ~6 observations to estimate a unit root; got {len(series)}"
         )
     try:
         statistic, p_value, used_lag, n_obs, _crit, _icbest = sm_adfuller(series, autolag="AIC")

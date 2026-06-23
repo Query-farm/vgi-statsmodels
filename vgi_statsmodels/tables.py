@@ -404,10 +404,7 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
         categories = ["statistics", "timeseries", "test"]
         examples = [
             FunctionExample(
-                sql=(
-                    "SELECT * FROM statsmodels.adfuller((SELECT v FROM d ORDER BY t), "
-                    "\"column\" := 'v')"
-                ),
+                sql=("SELECT * FROM statsmodels.adfuller((SELECT v FROM d ORDER BY t), \"column\" := 'v')"),
                 description="ADF stationarity test on an ordered series",
             )
         ]

@@ -1,16 +1,13 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python",
+#     "vgi-python>=0.8.3",
 #     "statsmodels>=0.14",
 #     "patsy>=0.5",
 #     "numpy",
 #     "pandas",
 #     "pyarrow",
 # ]
-#
-# [tool.uv.sources]
-# vgi-python = { path = "../vgi-python" }
 # ///
 """Stdio entry shim for the statsmodels VGI worker.
 

@@ -188,9 +188,7 @@ def test_ttest_clearly_different_groups_small_p() -> None:
 def test_ttest_identical_groups_large_p() -> None:
     rng = np.random.default_rng(4)
     base = rng.normal(0.0, 1.0, 200)
-    df = pd.DataFrame(
-        {"value": np.concatenate([base, base]), "arm": ["a"] * 200 + ["b"] * 200}
-    )
+    df = pd.DataFrame({"value": np.concatenate([base, base]), "arm": ["a"] * 200 + ["b"] * 200})
     out = stats.ttest(df, column="value", group="arm")
     assert out["p_value"][0] > 0.9
 

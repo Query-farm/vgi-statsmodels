@@ -98,9 +98,7 @@ def test_ttest_e2e(client: Client) -> None:
 
 def test_adfuller_e2e(client: Client) -> None:
     rng = np.random.default_rng(321)
-    tbl = pa.Table.from_pandas(
-        pd.DataFrame({"value": rng.normal(0, 1, 300)}), preserve_index=False
-    )
+    tbl = pa.Table.from_pandas(pd.DataFrame({"value": rng.normal(0, 1, 300)}), preserve_index=False)
     out = _run(client, "adfuller", tbl, column="value")
     assert out.to_pydict()["p_value"][0] < 0.05
 
