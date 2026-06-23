@@ -128,4 +128,4 @@ jobs:
       # `docstring_parser` module, so installing both into the project venv is a
       # non-deterministic file collision. `uvx` gives pydoclint a clean env.
       - name: Docstring lint (pydoclint)
-        run: uvx pydoclint vgi_statsmodels/
+        run: uvx pydoclint --config pyproject.toml vgi_statsmodels/
