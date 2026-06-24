@@ -81,11 +81,28 @@ class SinkBuffer[TArgs, TState](TableBufferingFunction[TArgs, TState]):
 
         Returns an empty (zero-row) frame -- with the right column names -- when
         no rows were sunk, so finalize can apply uniform empty-input handling.
+
+        DuckDB types unsuffixed decimal literals (and many aggregates) as
+        ``DECIMAL``; Arrow ``decimal128`` would otherwise reach pandas as an
+        ``object`` column of ``decimal.Decimal`` values, which Patsy / statsmodels
+        reject as "non-numeric". We cast any decimal columns to ``float64`` at the
+        Arrow boundary so numeric relations work whatever literal form they take.
         """
         input_schema = input_schema_of(params)
         batches: list[pa.RecordBatch] = []
         for _sid, value in params.storage.state_log_scan(_DATA_KEY, b""):
             batches.extend(deserialize_batches(value))
-        if not batches:
-            return pa.Table.from_batches([], schema=input_schema).to_pandas()
-        return pa.Table.from_batches(batches, schema=input_schema).to_pandas()
+        table = (
+            pa.Table.from_batches(batches, schema=input_schema)
+            if batches
+            else pa.Table.from_batches([], schema=input_schema)
+        )
+        return _decimals_to_float(table).to_pandas()
+
+
+def _decimals_to_float(table: pa.Table) -> pa.Table:
+    """Cast any ``decimal128`` / ``decimal256`` columns of a table to ``float64``."""
+    for i, field in enumerate(table.schema):
+        if pa.types.is_decimal(field.type):
+            table = table.set_column(i, field.name, table.column(i).cast(pa.float64()))
+    return table

@@ -21,6 +21,21 @@ from vgi_statsmodels.tables import TABLE_FUNCTIONS
 
 _FUNCTIONS: list[type] = [*TABLE_FUNCTIONS]
 
+_SCHEMA_EXAMPLE_QUERIES = (
+    "SELECT * FROM statsmodels.main.ols("
+    "(SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), "
+    "formula := 'y ~ x');\n"
+    "SELECT * FROM statsmodels.main.model_stats("
+    "(SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), "
+    "formula := 'y ~ x');\n"
+    "SELECT * FROM statsmodels.main.glm("
+    "(SELECT * FROM (VALUES (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12)) AS t(x, y)), "
+    "formula := 'y ~ x', family := 'poisson');\n"
+    "SELECT * FROM statsmodels.main.ttest("
+    "(SELECT * FROM (VALUES (10,'a'),(11,'a'),(20,'b'),(22,'b')) AS t(v, g)), "
+    "\"column\" := 'v', \"group\" := 'g');"
+)
+
 _CATALOG_DESCRIPTION_LLM = (
     "Run regression with full statistical inference and classic hypothesis "
     "tests directly over SQL relations. Fit ordinary least squares (ols), "
@@ -71,8 +86,14 @@ _STATSMODELS_CATALOG = Catalog(
     ),
     source_url="https://github.com/Query-farm/vgi-statsmodels",
     tags={
-        "vgi.description_llm": _CATALOG_DESCRIPTION_LLM,
-        "vgi.description_md": _CATALOG_DESCRIPTION_MD,
+        "vgi.title": "Regression & Statistical Inference",
+        "vgi.keywords": (
+            "statsmodels, regression, ols, logit, glm, model statistics, t-test, "
+            "adfuller, hypothesis test, p-value, confidence interval, inference, "
+            "stationarity, statistics, patsy formula"
+        ),
+        "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
+        "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
         "vgi.author": "Query.Farm",
         "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
         "vgi.license": "MIT",
@@ -84,8 +105,19 @@ _STATSMODELS_CATALOG = Catalog(
             name="main",
             comment="Regression (OLS/Logit/GLM) and hypothesis tests (t-test, ADF) for SQL",
             tags={
-                "vgi.description_llm": _SCHEMA_DESCRIPTION_LLM,
-                "vgi.description_md": _SCHEMA_DESCRIPTION_MD,
+                "vgi.title": "statsmodels — main",
+                "vgi.keywords": (
+                    "regression, ols, logit, glm, model_stats, ttest, adfuller, "
+                    "inference, hypothesis test, statistics, time series, stationarity"
+                ),
+                # VGI123 classifying tags use BARE keys (not vgi.-namespaced).
+                "domain": "statistics",
+                "category": "regression-and-inference",
+                "topic": "statistical-modeling",
+                "vgi.source_url": ("https://github.com/Query-farm/vgi-statsmodels/blob/main/vgi_statsmodels/worker.py"),
+                "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
+                "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
+                "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,
             },
             functions=list(_FUNCTIONS),
         ),
