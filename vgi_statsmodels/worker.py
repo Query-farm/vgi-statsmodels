@@ -21,13 +21,72 @@ from vgi_statsmodels.tables import TABLE_FUNCTIONS
 
 _FUNCTIONS: list[type] = [*TABLE_FUNCTIONS]
 
+_CATALOG_DESCRIPTION_LLM = (
+    "Run regression with full statistical inference and classic hypothesis "
+    "tests directly over SQL relations. Fit ordinary least squares (ols), "
+    "logistic (logit), and generalized linear models (glm: "
+    "gaussian/binomial/poisson/gamma) from a Patsy formula and get a "
+    "coefficient table with standard errors, t/z statistics, p-values, and 95% "
+    "confidence intervals; get whole-model fit statistics (model_stats: "
+    "R-squared, AIC/BIC, F-test, log-likelihood); run a two-sample t-test "
+    "(ttest) for a difference in means; and test a time series for a unit root "
+    "with the Augmented Dickey-Fuller test (adfuller). Use it to answer 'which "
+    "predictors matter and by how much', 'is this effect significant', 'how "
+    "well does the model fit', 'do these two groups differ', and 'is this "
+    "series stationary' — all in SQL, powered by statsmodels."
+)
+
+_CATALOG_DESCRIPTION_MD = (
+    "# statsmodels\n\n"
+    "Regression with full statistical inference and hypothesis tests for "
+    "DuckDB/SQL, powered by [statsmodels](https://www.statsmodels.org/) and "
+    "[Patsy](https://patsy.readthedocs.io/).\n\n"
+    "Each function takes a whole input relation as a `(SELECT ...)` subquery "
+    "plus a Patsy `formula` (or column roles) as named arguments.\n\n"
+    "**Regression** (coefficient tables with std error, t/z, p-value, 95% CI): "
+    "`ols`, `logit`, `glm`.\n\n"
+    "**Model fit:** `model_stats` (R-squared, adjusted R-squared, F-test, "
+    "AIC/BIC, log-likelihood).\n\n"
+    "**Hypothesis tests:** `ttest` (two-sample t-test), `adfuller` "
+    "(Augmented Dickey-Fuller stationarity test)."
+)
+
+_SCHEMA_DESCRIPTION_LLM = (
+    "Regression (ols, logit, glm) and model-fit (model_stats) functions plus "
+    "hypothesis tests (ttest, adfuller). Each consumes a SQL relation and a "
+    "Patsy formula or column roles, returning a coefficient/statistic table."
+)
+
+_SCHEMA_DESCRIPTION_MD = (
+    "Regression (OLS/Logit/GLM), whole-model fit statistics, and hypothesis "
+    "tests (two-sample t-test, Augmented Dickey-Fuller) over SQL relations."
+)
+
 _STATSMODELS_CATALOG = Catalog(
     name="statsmodels",
     default_schema="main",
+    comment=(
+        "statsmodels-powered regression and inference for DuckDB/SQL: OLS/Logit/GLM "
+        "fits, model statistics, and t-test/ADF hypothesis tests"
+    ),
+    source_url="https://github.com/Query-farm/vgi-statsmodels",
+    tags={
+        "vgi.description_llm": _CATALOG_DESCRIPTION_LLM,
+        "vgi.description_md": _CATALOG_DESCRIPTION_MD,
+        "vgi.author": "Query.Farm",
+        "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
+        "vgi.license": "MIT",
+        "vgi.support_contact": "https://github.com/Query-farm/vgi-statsmodels/issues",
+        "vgi.support_policy_url": "https://github.com/Query-farm/vgi-statsmodels/blob/main/README.md",
+    },
     schemas=[
         Schema(
             name="main",
             comment="Regression (OLS/Logit/GLM) and hypothesis tests (t-test, ADF) for SQL",
+            tags={
+                "vgi.description_llm": _SCHEMA_DESCRIPTION_LLM,
+                "vgi.description_md": _SCHEMA_DESCRIPTION_MD,
+            },
             functions=list(_FUNCTIONS),
         ),
     ],

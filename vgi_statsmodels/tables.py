@@ -174,6 +174,19 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
                 description="OLS regression of y on x",
             )
         ]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `term` | VARCHAR | Model term (a predictor or `Intercept`). One row per term. |\n"
+                "| `coef` | DOUBLE | Estimated coefficient. |\n"
+                "| `std_err` | DOUBLE | Standard error of the coefficient. |\n"
+                "| `t_value` | DOUBLE | t-statistic (coef / std_err). |\n"
+                "| `p_value` | DOUBLE | Two-sided p-value for H0: coef = 0. |\n"
+                "| `ci_lower` | DOUBLE | Lower bound of the 95% confidence interval. |\n"
+                "| `ci_upper` | DOUBLE | Upper bound of the 95% confidence interval. |"
+            )
+        }
 
     @classmethod
     def on_bind(cls, params: BindParams[FormulaArgs]) -> BindResponse:
@@ -224,6 +237,16 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
                 description="OLS model fit statistics",
             )
         ]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `statistic` | VARCHAR | Fit-statistic name: `r_squared`, `adj_r_squared`, "
+                "`f_statistic`, `f_pvalue`, `aic`, `bic`, `log_likelihood`, `nobs`, `df_model`, "
+                "`df_resid`. One row per statistic. |\n"
+                "| `value` | DOUBLE | Value of the statistic. |"
+            )
+        }
 
     @classmethod
     def on_bind(cls, params: BindParams[FormulaArgs]) -> BindResponse:
@@ -274,6 +297,20 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
                 description="Logistic regression of binary y on x",
             )
         ]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `term` | VARCHAR | Model term (a predictor or `Intercept`). One row per term. |\n"
+                "| `coef` | DOUBLE | Estimated log-odds coefficient. |\n"
+                "| `std_err` | DOUBLE | Standard error of the coefficient. |\n"
+                "| `z_value` | DOUBLE | Wald z-statistic (coef / std_err). |\n"
+                "| `p_value` | DOUBLE | Two-sided p-value for H0: coef = 0. |\n"
+                "| `ci_lower` | DOUBLE | Lower bound of the 95% confidence interval. |\n"
+                "| `ci_upper` | DOUBLE | Upper bound of the 95% confidence interval. |\n"
+                "| `odds_ratio` | DOUBLE | Odds ratio exp(coef); >1 raises odds, <1 lowers. |"
+            )
+        }
 
     @classmethod
     def on_bind(cls, params: BindParams[FormulaArgs]) -> BindResponse:
@@ -324,6 +361,19 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
                 description="Poisson GLM of count y on x",
             )
         ]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `term` | VARCHAR | Model term (a predictor or `Intercept`). One row per term. |\n"
+                "| `coef` | DOUBLE | Estimated coefficient (on the link scale). |\n"
+                "| `std_err` | DOUBLE | Standard error of the coefficient. |\n"
+                "| `z_value` | DOUBLE | Wald z-statistic (coef / std_err). |\n"
+                "| `p_value` | DOUBLE | Two-sided p-value for H0: coef = 0. |\n"
+                "| `ci_lower` | DOUBLE | Lower bound of the 95% confidence interval. |\n"
+                "| `ci_upper` | DOUBLE | Upper bound of the 95% confidence interval. |"
+            )
+        }
 
     @classmethod
     def on_bind(cls, params: BindParams[GlmArgs]) -> BindResponse:
@@ -376,6 +426,16 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
                 description="Two-sample t-test across the group column",
             )
         ]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `statistic` | DOUBLE | Two-sample t-statistic. One row total. |\n"
+                "| `p_value` | DOUBLE | Two-sided p-value for equal means. |\n"
+                "| `df` | DOUBLE | Degrees of freedom. |\n"
+                "| `mean_diff` | DOUBLE | mean(group0) - mean(group1). |"
+            )
+        }
 
     @classmethod
     def on_bind(cls, params: BindParams[TTestArgs]) -> BindResponse:
@@ -428,6 +488,16 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
                 description="ADF stationarity test on an ordered series",
             )
         ]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `statistic` | DOUBLE | Augmented Dickey-Fuller test statistic. One row total. |\n"
+                "| `p_value` | DOUBLE | MacKinnon p-value; small => reject unit root (stationary). |\n"
+                "| `used_lag` | INTEGER | Number of lags chosen by AIC. |\n"
+                "| `n_obs` | INTEGER | Observations used after lagging/differencing. |"
+            )
+        }
 
     @classmethod
     def on_bind(cls, params: BindParams[AdfArgs]) -> BindResponse:
