@@ -12,6 +12,7 @@ here.
 
 from __future__ import annotations
 
+import json
 import sys
 
 from vgi import Worker
@@ -74,7 +75,12 @@ _SCHEMA_DESCRIPTION_LLM = (
 
 _SCHEMA_DESCRIPTION_MD = (
     "Regression (OLS/Logit/GLM), whole-model fit statistics, and hypothesis "
-    "tests (two-sample t-test, Augmented Dickey-Fuller) over SQL relations."
+    "tests (two-sample t-test, Augmented Dickey-Fuller) over SQL relations. "
+    "Each function buffers a whole input relation passed as a `(SELECT ...)` "
+    "subquery, then runs the statsmodels routine once from a Patsy formula "
+    "(for the regressions) or named column roles (for the tests), returning a "
+    "coefficient or statistic table. Use it to estimate effects, judge model "
+    "fit, compare two groups, or check a series for stationarity — all in SQL."
 )
 
 _STATSMODELS_CATALOG = Catalog(
@@ -87,10 +93,24 @@ _STATSMODELS_CATALOG = Catalog(
     source_url="https://github.com/Query-farm/vgi-statsmodels",
     tags={
         "vgi.title": "Regression & Statistical Inference",
-        "vgi.keywords": (
-            "statsmodels, regression, ols, logit, glm, model statistics, t-test, "
-            "adfuller, hypothesis test, p-value, confidence interval, inference, "
-            "stationarity, statistics, patsy formula"
+        "vgi.keywords": json.dumps(
+            [
+                "statsmodels",
+                "regression",
+                "ols",
+                "logit",
+                "glm",
+                "model statistics",
+                "t-test",
+                "adfuller",
+                "hypothesis test",
+                "p-value",
+                "confidence interval",
+                "inference",
+                "stationarity",
+                "statistics",
+                "patsy formula",
+            ]
         ),
         "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
         "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
@@ -106,15 +126,26 @@ _STATSMODELS_CATALOG = Catalog(
             comment="Regression (OLS/Logit/GLM) and hypothesis tests (t-test, ADF) for SQL",
             tags={
                 "vgi.title": "statsmodels — main",
-                "vgi.keywords": (
-                    "regression, ols, logit, glm, model_stats, ttest, adfuller, "
-                    "inference, hypothesis test, statistics, time series, stationarity"
+                "vgi.keywords": json.dumps(
+                    [
+                        "regression",
+                        "ols",
+                        "logit",
+                        "glm",
+                        "model_stats",
+                        "ttest",
+                        "adfuller",
+                        "inference",
+                        "hypothesis test",
+                        "statistics",
+                        "time series",
+                        "stationarity",
+                    ]
                 ),
                 # VGI123 classifying tags use BARE keys (not vgi.-namespaced).
                 "domain": "statistics",
                 "category": "regression-and-inference",
                 "topic": "statistical-modeling",
-                "vgi.source_url": ("https://github.com/Query-farm/vgi-statsmodels/blob/main/vgi_statsmodels/worker.py"),
                 "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
                 "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
                 "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,

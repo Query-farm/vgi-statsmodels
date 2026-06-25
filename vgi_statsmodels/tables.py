@@ -179,7 +179,10 @@ class TTestArgs:
     """Arguments for the two-sample t-test (value column and group column)."""
 
     data: Annotated[TableInput, Arg(0, doc="Relation containing the value and group columns.")]
-    column: Annotated[str, Arg("column", default="value", doc="Numeric value column to compare.")]
+    column: Annotated[
+        str,
+        Arg("column", default="value", doc="Name of the value column whose means are compared across the two groups."),
+    ]
     group: Annotated[str, Arg("group", default="group", doc="Grouping column with two levels.")]
 
 
@@ -188,7 +191,9 @@ class AdfArgs:
     """Arguments for the Augmented Dickey-Fuller test (ordered series column)."""
 
     data: Annotated[TableInput, Arg(0, doc="Ordered relation containing the series column.")]
-    column: Annotated[str, Arg("column", default="value", doc="Numeric (time-ordered) series column.")]
+    column: Annotated[
+        str, Arg("column", default="value", doc="Name of the time-ordered series column to test for a unit root.")
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -253,12 +258,20 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
                     "```\n\n"
                     "See `model_stats` for whole-model fit statistics on the same formula."
                 ),
-                keywords=(
-                    "ols, ordinary least squares, linear regression, regression, coefficients, "
-                    "p-value, confidence interval, standard error, t-statistic, patsy formula, "
-                    "fit, predictors"
-                ),
-                relative_path="vgi_statsmodels/tables.py",
+                keywords=[
+                    "ols",
+                    "ordinary least squares",
+                    "linear regression",
+                    "regression",
+                    "coefficients",
+                    "p-value",
+                    "confidence interval",
+                    "standard error",
+                    "t-statistic",
+                    "patsy formula",
+                    "fit",
+                    "predictors",
+                ],
             ),
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
@@ -364,11 +377,21 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
                     ");\n"
                     "```"
                 ),
-                keywords=(
-                    "model statistics, r-squared, adjusted r-squared, goodness of fit, f-test, "
-                    "f-statistic, aic, bic, log-likelihood, ols, regression, model fit, diagnostics"
-                ),
-                relative_path="vgi_statsmodels/tables.py",
+                keywords=[
+                    "model statistics",
+                    "r-squared",
+                    "adjusted r-squared",
+                    "goodness of fit",
+                    "f-test",
+                    "f-statistic",
+                    "aic",
+                    "bic",
+                    "log-likelihood",
+                    "ols",
+                    "regression",
+                    "model fit",
+                    "diagnostics",
+                ],
             ),
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
@@ -463,11 +486,19 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
                     ");\n"
                     "```"
                 ),
-                keywords=(
-                    "logit, logistic regression, binary classification, log-odds, odds ratio, "
-                    "z-statistic, p-value, classification, probability, regression, patsy formula"
-                ),
-                relative_path="vgi_statsmodels/tables.py",
+                keywords=[
+                    "logit",
+                    "logistic regression",
+                    "binary classification",
+                    "log-odds",
+                    "odds ratio",
+                    "z-statistic",
+                    "p-value",
+                    "classification",
+                    "probability",
+                    "regression",
+                    "patsy formula",
+                ],
             ),
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
@@ -567,11 +598,20 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
                     ");\n"
                     "```"
                 ),
-                keywords=(
-                    "glm, generalized linear model, poisson regression, count model, binomial, "
-                    "gamma, gaussian, log link, logit link, regression, coefficients, patsy formula"
-                ),
-                relative_path="vgi_statsmodels/tables.py",
+                keywords=[
+                    "glm",
+                    "generalized linear model",
+                    "poisson regression",
+                    "count model",
+                    "binomial",
+                    "gamma",
+                    "gaussian",
+                    "log link",
+                    "logit link",
+                    "regression",
+                    "coefficients",
+                    "patsy formula",
+                ],
             ),
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
@@ -672,11 +712,19 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
                     ");\n"
                     "```"
                 ),
-                keywords=(
-                    "ttest, t-test, two-sample t-test, difference in means, hypothesis test, "
-                    "p-value, t-statistic, ab test, a/b test, group comparison, significance"
-                ),
-                relative_path="vgi_statsmodels/tables.py",
+                keywords=[
+                    "ttest",
+                    "t-test",
+                    "two-sample t-test",
+                    "difference in means",
+                    "hypothesis test",
+                    "p-value",
+                    "t-statistic",
+                    "ab test",
+                    "a/b test",
+                    "group comparison",
+                    "significance",
+                ],
             ),
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
@@ -776,11 +824,20 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
                     ");\n"
                     "```"
                 ),
-                keywords=(
-                    "adfuller, augmented dickey-fuller, adf, unit root, stationarity, stationary, "
-                    "time series, hypothesis test, p-value, trend, arima, differencing"
-                ),
-                relative_path="vgi_statsmodels/tables.py",
+                keywords=[
+                    "adfuller",
+                    "augmented dickey-fuller",
+                    "adf",
+                    "unit root",
+                    "stationarity",
+                    "stationary",
+                    "time series",
+                    "hypothesis test",
+                    "p-value",
+                    "trend",
+                    "arima",
+                    "differencing",
+                ],
             ),
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
