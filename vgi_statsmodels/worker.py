@@ -54,6 +54,9 @@ _CATALOG_DESCRIPTION_LLM = (
 
 _CATALOG_DESCRIPTION_MD = (
     "# statsmodels: Regression & Statistical Inference in SQL\n\n"
+    "![statsmodels logo]"
+    "(https://www.statsmodels.org/stable/_images/"
+    "statsmodels-logo-v2-horizontal.svg)\n\n"
     "Run regression with full statistical inference and classic hypothesis "
     "tests directly in DuckDB SQL: fit OLS, logistic, and generalized linear "
     "models and get coefficient tables complete with standard errors, "
