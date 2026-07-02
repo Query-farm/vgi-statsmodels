@@ -18,9 +18,119 @@ import sys
 from vgi import Worker
 from vgi.catalog import Catalog, Schema
 
-from vgi_statsmodels.tables import TABLE_FUNCTIONS
+from vgi_statsmodels.tables import (
+    _COUNT_REL,
+    _GROUP_REL,
+    _LINEAR_REL,
+    _LOGIT_REL,
+    _SERIES_REL,
+    TABLE_FUNCTIONS,
+)
 
 _FUNCTIONS: list[type] = [*TABLE_FUNCTIONS]
+
+# ---------------------------------------------------------------------------
+# Agent-suitability suite (VGI152). Each task's prompt inlines its own data so
+# a simulated analyst can solve it end-to-end; the `reference_sql` is the
+# grader's canonical solution and is deterministic (fixed data + rounding /
+# integer outputs). Column-name-only or row-order differences are tolerated
+# per-task via `ignore_column_names` / `unordered`.
+# ---------------------------------------------------------------------------
+
+_AGENT_TEST_TASKS = json.dumps(
+    [
+        {
+            "name": "ols_coefficients",
+            "prompt": (
+                "Using the statsmodels worker, fit an ordinary least squares regression of y "
+                "on x for these observations with columns (x, y): "
+                "(1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8). "
+                "Return one row per model term (the intercept and x) with its estimated "
+                "coefficient rounded to 2 decimal places."
+            ),
+            "reference_sql": (
+                f"SELECT term, round(coef, 2) AS coef FROM statsmodels.main.ols({_LINEAR_REL}, formula := 'y ~ x')"
+            ),
+            "unordered": True,
+        },
+        {
+            "name": "model_fit_r_squared",
+            "prompt": (
+                "For the same 8 observations with columns (x, y): "
+                "(1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8), "
+                "how well does an OLS model of y on x fit the data? Report the R-squared "
+                "goodness-of-fit statistic, rounded to 3 decimal places."
+            ),
+            "reference_sql": (
+                "SELECT round(value, 3) AS r_squared "
+                f"FROM statsmodels.main.model_stats({_LINEAR_REL}, formula := 'y ~ x') "
+                "WHERE statistic = 'r_squared'"
+            ),
+            "ignore_column_names": True,
+        },
+        {
+            "name": "logit_effect_direction",
+            "prompt": (
+                "Fit a logistic regression of the binary outcome y on x for these rows with "
+                "columns (x, y): (1,0),(2,0),(3,0),(4,1),(5,0),(6,1),(7,0),(8,1),(9,1),"
+                "(10,1),(11,1),(12,1). Report the estimated log-odds coefficient on x, "
+                "rounded to 2 decimal places."
+            ),
+            "reference_sql": (
+                "SELECT round(coef, 2) AS coef "
+                f"FROM statsmodels.main.logit({_LOGIT_REL}, formula := 'y ~ x') "
+                "WHERE term = 'x'"
+            ),
+            "ignore_column_names": True,
+        },
+        {
+            "name": "poisson_glm_rate",
+            "prompt": (
+                "These rows are counts y rising with x, columns (x, y): "
+                "(1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12). Fit a Poisson "
+                "generalized linear model of y on x and report the coefficient on x "
+                "(on the log link scale), rounded to 2 decimal places."
+            ),
+            "reference_sql": (
+                "SELECT round(coef, 2) AS coef "
+                f"FROM statsmodels.main.glm({_COUNT_REL}, formula := 'y ~ x', family := 'poisson') "
+                "WHERE term = 'x'"
+            ),
+            "ignore_column_names": True,
+        },
+        {
+            "name": "two_group_ttest",
+            "prompt": (
+                "Two groups 'a' and 'b' have these measurements, columns (v, g): "
+                "(10,'a'),(11,'a'),(9,'a'),(12,'a'),(10,'a'),"
+                "(20,'b'),(22,'b'),(19,'b'),(21,'b'),(20,'b'). Run a two-sample t-test to "
+                "compare the mean of v across the two groups and report the two-sided "
+                "p-value, rounded to 6 decimal places."
+            ),
+            "reference_sql": (
+                "SELECT round(p_value, 6) AS p_value "
+                f"FROM statsmodels.main.ttest({_GROUP_REL}, \"column\" := 'v', \"group\" := 'g')"
+            ),
+            "ignore_column_names": True,
+        },
+        {
+            "name": "adf_stationarity",
+            "prompt": (
+                "Run the Augmented Dickey-Fuller unit-root test on this time series. The rows "
+                "have columns (t, v) and must be tested in ascending t order: "
+                "(0,10.0),(1,13.82),(2,16.66),(3,14.87),(4,14.38),(5,12.71),(6,7.79),"
+                "(7,6.64),(8,7.02),(9,6.14),(10,9.6),(11,13.56),(12,13.97),(13,15.99),"
+                "(14,16.27),(15,12.06),(16,10.13),(17,8.5),(18,5.1),(19,6.4),(20,9.32),"
+                "(21,10.17),(22,13.96),(23,16.72),(24,14.83),(25,14.25),(26,12.54),"
+                "(27,7.64),(28,6.56),(29,7.04). Report how many lags the test chose "
+                "(used_lag) and how many observations it used (n_obs)."
+            ),
+            "reference_sql": (
+                f"SELECT used_lag, n_obs FROM statsmodels.main.adfuller({_SERIES_REL}, \"column\" := 'v')"
+            ),
+        },
+    ]
+)
 
 _SCHEMA_EXAMPLE_QUERIES = (
     "SELECT * FROM statsmodels.main.ols("
@@ -82,19 +192,19 @@ _CATALOG_DESCRIPTION_MD = (
     "R-style formula syntax (`y ~ x1 + x2 + C(group)`) makes specifying "
     "interactions, transformations, and categorical encodings concise and "
     "readable.\n\n"
-    "The function surface covers the everyday inference workflow. "
-    "**Regression** — `ols` (ordinary least squares), `logit` (logistic "
-    "regression), and `glm` (generalized linear models for the "
-    "gaussian/binomial/poisson/gamma families) — returns a coefficient table "
-    "with standard errors, t- or z-statistics, p-values, and 95% confidence "
-    "intervals. **Model fit** — `model_stats` — reports whole-model "
-    "diagnostics such as R-squared, adjusted R-squared, the F-test, AIC/BIC, "
-    "and log-likelihood. **Hypothesis tests** — `ttest` (two-sample t-test "
-    "for a difference in means) and `adfuller` (Augmented Dickey-Fuller test "
-    "for a unit root) — answer whether two groups differ and whether a time "
-    "series is stationary. Together they let you ask, in SQL alone, which "
-    "predictors matter and by how much, whether an effect is significant, how "
-    "well a model fits, and whether a series is stationary."
+    "The capabilities group into three areas. **Regression** estimates how "
+    "predictors drive an outcome — linear for continuous responses, logistic "
+    "for binary events, and generalized linear models for counts and other "
+    "exponential-family outcomes — always returning coefficients with standard "
+    "errors, t- or z-statistics, p-values, and 95% confidence intervals. "
+    "**Model fit** reports whole-model diagnostics such as R-squared, adjusted "
+    "R-squared, the F-test, AIC/BIC, and log-likelihood so you can judge how "
+    "well a linear model explains the data. **Hypothesis tests** compare two "
+    "group means and check a time series for a unit root (stationarity). "
+    "Together they let you ask, in SQL alone, which predictors matter and by "
+    "how much, whether an effect is significant, how well a model fits, and "
+    "whether a series is stationary. List the schema to see the individual "
+    "functions and their arguments."
 )
 
 _SCHEMA_DESCRIPTION_LLM = (
@@ -104,13 +214,24 @@ _SCHEMA_DESCRIPTION_LLM = (
 )
 
 _SCHEMA_DESCRIPTION_MD = (
-    "Regression (OLS/Logit/GLM), whole-model fit statistics, and hypothesis "
-    "tests (two-sample t-test, Augmented Dickey-Fuller) over SQL relations. "
-    "Each function buffers a whole input relation passed as a `(SELECT ...)` "
-    "subquery, then runs the statsmodels routine once from a Patsy formula "
-    "(for the regressions) or named column roles (for the tests), returning a "
-    "coefficient or statistic table. Use it to estimate effects, judge model "
-    "fit, compare two groups, or check a series for stationarity — all in SQL."
+    "## Regression & inference over SQL relations\n\n"
+    "This schema fits statistical models and runs classic hypothesis tests "
+    "directly over DuckDB relations, powered by "
+    "[statsmodels](https://www.statsmodels.org/). Every function takes a whole "
+    "input relation as a `(SELECT ...)` subquery plus either a Patsy formula "
+    "(`y ~ x1 + x2`) or named column roles, buffers the rows, runs the "
+    "routine once, and returns a coefficient or statistic table you can join, "
+    "filter, and persist.\n\n"
+    "It covers three areas:\n\n"
+    "- **Regression** — linear, logistic, and generalized linear fits that "
+    "return a coefficient table with standard errors, t/z-statistics, "
+    "p-values, and 95% confidence intervals.\n"
+    "- **Model fit** — whole-model diagnostics for a linear fit, such as "
+    "R-squared, the F-test, and AIC/BIC.\n"
+    "- **Hypothesis tests** — compare two group means, and test a time series "
+    "for a unit root (stationarity).\n\n"
+    "Reach for it to estimate effects, judge model fit, compare two groups, or "
+    "check a series for stationarity — all without leaving SQL."
 )
 
 _STATSMODELS_CATALOG = Catalog(
@@ -149,6 +270,7 @@ _STATSMODELS_CATALOG = Catalog(
         "vgi.license": "MIT",
         "vgi.support_contact": "https://github.com/Query-farm/vgi-statsmodels/issues",
         "vgi.support_policy_url": "https://github.com/Query-farm/vgi-statsmodels/blob/main/README.md",
+        "vgi.agent_test_tasks": _AGENT_TEST_TASKS,
     },
     schemas=[
         Schema(
@@ -176,6 +298,33 @@ _STATSMODELS_CATALOG = Catalog(
                 "domain": "statistics",
                 "category": "regression-and-inference",
                 "topic": "statistical-modeling",
+                # VGI413 navigation/SEO registry; each function carries a
+                # matching vgi.category (see tables.py). Order = display order.
+                "vgi.categories": json.dumps(
+                    [
+                        {
+                            "name": "Regression",
+                            "description": (
+                                "Fit linear, logistic, and generalized linear models and read "
+                                "their coefficient tables with full statistical inference."
+                            ),
+                        },
+                        {
+                            "name": "Model Fit",
+                            "description": (
+                                "Whole-model goodness-of-fit diagnostics (R-squared, F-test, "
+                                "AIC/BIC) for a fitted linear model."
+                            ),
+                        },
+                        {
+                            "name": "Hypothesis Tests",
+                            "description": (
+                                "Classic significance tests: compare two group means and check "
+                                "a time series for a unit root (stationarity)."
+                            ),
+                        },
+                    ]
+                ),
                 "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
                 "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
                 "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,

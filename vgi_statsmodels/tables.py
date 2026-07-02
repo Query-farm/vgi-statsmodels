@@ -273,6 +273,7 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
                     "predictors",
                 ],
             ),
+            "vgi.category": "Regression",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -393,6 +394,7 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
                     "diagnostics",
                 ],
             ),
+            "vgi.category": "Model Fit",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -500,6 +502,7 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
                     "patsy formula",
                 ],
             ),
+            "vgi.category": "Regression",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -613,6 +616,7 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
                     "patsy formula",
                 ],
             ),
+            "vgi.category": "Regression",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -726,6 +730,7 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
                     "significance",
                 ],
             ),
+            "vgi.category": "Hypothesis Tests",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -839,6 +844,7 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
                     "differencing",
                 ],
             ),
+            "vgi.category": "Hypothesis Tests",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
