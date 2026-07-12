@@ -60,6 +60,11 @@ _GLM_FAMILIES = {
     "gamma": sm.families.Gamma,
 }
 
+# Public, sorted view of the accepted GLM family names. Both the discoverable
+# `choices` constraint on the glm `family` argument and the glm_families
+# discovery view source from this so metadata and behaviour cannot drift.
+GLM_FAMILY_NAMES: tuple[str, ...] = tuple(sorted(_GLM_FAMILIES))
+
 
 class StatsError(ValueError):
     """Raised for user-facing input problems.

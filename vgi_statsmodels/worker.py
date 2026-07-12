@@ -16,8 +16,9 @@ import json
 import sys
 
 from vgi import Worker
-from vgi.catalog import Catalog, Schema
+from vgi.catalog import Catalog, Schema, View
 
+from vgi_statsmodels import stats
 from vgi_statsmodels.tables import (
     _COUNT_REL,
     _GROUP_REL,
@@ -28,6 +29,126 @@ from vgi_statsmodels.tables import (
 )
 
 _FUNCTIONS: list[type] = [*TABLE_FUNCTIONS]
+
+# ---------------------------------------------------------------------------
+# Browsable discovery view (VGI146).
+#
+# The worker otherwise exposes only table functions, so an agent would have to
+# guess arguments before it could see any data. This VALUES-backed view gives it
+# something concrete to `SELECT` from: the closed set of GLM error families the
+# `glm` function accepts (its `family` argument), each with its default link
+# function, the kind of outcome it suits, and a plain-language use. Being
+# VALUES-backed it scans with no network or credentials (clears VGI911) and it is
+# a genuine view, not a wrapper around a parameterless table function (VGI145).
+# ---------------------------------------------------------------------------
+
+# (family, link, typical_outcome, example_use). `family` mirrors stats.GLM_FAMILY_NAMES
+# (asserted below) so this discovery view and the value glm() actually validates
+# against can never drift apart.
+_GLM_FAMILY_ROWS: list[tuple[str, str, str, str]] = [
+    ("gaussian", "identity", "Continuous, roughly symmetric outcomes", "Reproduces ordinary least squares (OLS)."),
+    ("binomial", "logit", "Binary (0/1) or proportion outcomes", "Yes/no events; the same fit as logit()."),
+    ("poisson", "log", "Non-negative integer counts", "Event counts such as purchases or arrivals."),
+    ("gamma", "inverse", "Positive, right-skewed continuous outcomes", "Durations, insurance claim sizes, spend."),
+]
+assert {r[0] for r in _GLM_FAMILY_ROWS} == set(stats.GLM_FAMILY_NAMES), (
+    "glm_families view is out of sync with stats.GLM_FAMILY_NAMES"
+)
+
+
+def _values_view_sql(rows: list[tuple[str, str, str, str]], columns: tuple[str, str, str, str]) -> str:
+    """Render literal ``rows`` as a ``SELECT ... FROM (VALUES ...)`` view body.
+
+    Args:
+        rows: Tuples of string cell values, one per output row.
+        columns: Output column names, one per cell.
+
+    Returns:
+        A SQL string defining a VALUES-backed relation with the given columns.
+    """
+
+    def lit(value: str) -> str:
+        return "'" + value.replace("'", "''") + "'"
+
+    tuples = ", ".join("(" + ", ".join(lit(cell) for cell in row) + ")" for row in rows)
+    collist = ", ".join(columns)
+    return f"SELECT * FROM (VALUES {tuples}) AS t({collist})"
+
+
+_GLM_FAMILIES_COLUMNS = ("family", "link", "typical_outcome", "example_use")
+
+_GLM_FAMILIES_VIEW = View(
+    name="glm_families",
+    definition=_values_view_sql(_GLM_FAMILY_ROWS, _GLM_FAMILIES_COLUMNS),
+    comment="The GLM error families the glm() function accepts, one per row (discovery view).",
+    column_comments={
+        "family": "GLM error-family name; pass it as glm(..., family := '<family>').",
+        "link": "Default link function statsmodels uses for this family.",
+        "typical_outcome": "The kind of response variable this family models.",
+        "example_use": "A short, concrete example of when to choose this family.",
+    },
+    tags={
+        "vgi.title": "GLM Error Families",
+        "vgi.doc_llm": (
+            "# glm_families\n\n"
+            "A small browsable reference view listing the **GLM error families** the `glm` "
+            "function accepts as its `family` argument. Each row pairs a family name with its "
+            "default link function, the kind of outcome it models, and a concrete example use.\n\n"
+            "**Use it** to discover valid `family` values before calling `glm`: the `family` "
+            "column is exactly what you pass as `glm(<relation>, formula := '...', family := "
+            "'<family>')`. Four families are available: `gaussian` (identity link, equals OLS), "
+            "`binomial` (logit link, for binary/proportion outcomes), `poisson` (log link, for "
+            "counts), and `gamma` (inverse link, for positive right-skewed responses). The view "
+            "is a fixed in-memory table, so it scans instantly with no arguments."
+        ),
+        "vgi.doc_md": (
+            "## GLM error families\n\n"
+            "A reference view of the four error families the "
+            "[statsmodels](https://www.statsmodels.org/) GLM fit supports, exposed so you can "
+            "browse valid `family` values before calling `glm`.\n\n"
+            "Each row gives the `family` name (what you pass as `glm(..., family := '<family>')`), "
+            "its default `link` function, the `typical_outcome` it models, and an `example_use`. "
+            "The families are `gaussian` (identity link, equivalent to OLS), `binomial` (logit "
+            "link, binary or proportion outcomes), `poisson` (log link, count outcomes), and "
+            "`gamma` (inverse link, positive right-skewed outcomes).\n\n"
+            "It is a fixed four-row table, so it always scans instantly."
+        ),
+        "vgi.keywords": json.dumps(
+            [
+                "glm families",
+                "error family",
+                "family",
+                "link function",
+                "gaussian",
+                "binomial",
+                "poisson",
+                "gamma",
+                "discovery",
+                "reference",
+                "generalized linear model",
+            ]
+        ),
+        "vgi.category": "Regression",
+        # VGI123 classifying tags use BARE keys (not vgi.-namespaced).
+        "domain": "statistics",
+        "topic": "statistical-modeling",
+        "vgi.example_queries": json.dumps(
+            [
+                {
+                    "description": "List every GLM family with its link function and the outcome it suits.",
+                    "sql": ("SELECT family, link, typical_outcome FROM statsmodels.main.glm_families ORDER BY family"),
+                },
+                {
+                    "description": "Which GLM family should you use for count outcomes?",
+                    "sql": (
+                        "SELECT family, example_use FROM statsmodels.main.glm_families "
+                        "WHERE typical_outcome = 'Non-negative integer counts'"
+                    ),
+                },
+            ]
+        ),
+    },
+)
 
 # ---------------------------------------------------------------------------
 # Agent-suitability suite (VGI152). Each task's prompt inlines its own data so
@@ -128,6 +249,19 @@ _AGENT_TEST_TASKS = json.dumps(
             "reference_sql": (
                 f"SELECT used_lag, n_obs FROM statsmodels.main.adfuller({_SERIES_REL}, \"column\" := 'v')"
             ),
+        },
+        {
+            "name": "glm_family_for_counts",
+            "prompt": (
+                "The statsmodels worker publishes a discovery table of the error families its "
+                "generalized linear model (glm) supports. Consult it: which single family name "
+                "should you use to model non-negative integer count outcomes? Return just that "
+                "family name."
+            ),
+            "reference_sql": (
+                "SELECT family FROM statsmodels.main.glm_families WHERE typical_outcome = 'Non-negative integer counts'"
+            ),
+            "ignore_column_names": True,
         },
     ]
 )
@@ -329,6 +463,7 @@ _STATSMODELS_CATALOG = Catalog(
                 "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
                 "vgi.example_queries": _SCHEMA_EXAMPLE_QUERIES,
             },
+            views=[_GLM_FAMILIES_VIEW],
             functions=list(_FUNCTIONS),
         ),
     ],

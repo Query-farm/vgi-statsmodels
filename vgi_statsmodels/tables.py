@@ -36,6 +36,12 @@ from . import stats
 from .buffering import DrainState, SinkBuffer
 from .meta import object_tags
 from .schema_utils import field as sfield
+from .schema_utils import result_columns_schema
+
+# The closed set of GLM error families glm() accepts, sourced from the single
+# registry in stats so the discoverable `choices` constraint (VGI317) and the
+# runtime behaviour can never drift. Sorted for a stable, deterministic order.
+_GLM_FAMILY_NAMES: list[str] = list(stats.GLM_FAMILY_NAMES)
 
 # ---------------------------------------------------------------------------
 # Self-contained example relations
@@ -169,7 +175,8 @@ class GlmArgs:
         Arg(
             "family",
             default="gaussian",
-            doc="Error family: gaussian | binomial | poisson | gamma.",
+            doc="Error distribution for the response, one of the supported GLM families (default gaussian).",
+            choices=_GLM_FAMILY_NAMES,
         ),
     ]
 
@@ -218,8 +225,11 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
         categories = ["statistics", "regression"]
         examples = [
             FunctionExample(
-                sql=f"SELECT * FROM statsmodels.main.ols({_LINEAR_REL}, formula := 'y ~ x')",
-                description="OLS regression of y on x over an inline relation",
+                sql=(
+                    "SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value "
+                    f"FROM statsmodels.main.ols({_LINEAR_REL}, formula := 'y ~ x') ORDER BY term"
+                ),
+                description="Fit y ~ x by OLS and read each term's coefficient and p-value",
             )
         ]
         tags = {
@@ -251,12 +261,9 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
                     "Returns one row per model term (`Intercept` and each predictor) with the "
                     "estimated coefficient, standard error, t-value, p-value, and 95% "
                     "confidence bounds.\n\n"
-                    "```sql\n"
-                    "SELECT * FROM statsmodels.main.ols(\n"
-                    "  (SELECT y, x FROM observations), formula := 'y ~ x'\n"
-                    ");\n"
-                    "```\n\n"
-                    "See `model_stats` for whole-model fit statistics on the same formula."
+                    "Call it as `ols(<relation>, formula := 'y ~ x')`; a ready-to-run version "
+                    "is in this function's example queries. See `model_stats` for whole-model "
+                    "fit statistics on the same formula."
                 ),
                 keywords=[
                     "ols",
@@ -274,17 +281,9 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
                 ],
             ),
             "vgi.category": "Regression",
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `term` | VARCHAR | Model term (a predictor or `Intercept`). One row per term. |\n"
-                "| `coef` | DOUBLE | Estimated coefficient. |\n"
-                "| `std_err` | DOUBLE | Standard error of the coefficient. |\n"
-                "| `t_value` | DOUBLE | t-statistic (coef / std_err). |\n"
-                "| `p_value` | DOUBLE | Two-sided p-value for H0: coef = 0. |\n"
-                "| `ci_lower` | DOUBLE | Lower bound of the 95% confidence interval. |\n"
-                "| `ci_upper` | DOUBLE | Upper bound of the 95% confidence interval. |"
-            ),
+            # VGI307/VGI414: structured static result schema, derived from the output
+            # pa.schema so it stays in lockstep with what finalize() emits (VGI910).
+            "vgi.result_columns_schema": result_columns_schema(_OLS_SCHEMA),
             "vgi.executable_examples": json.dumps(
                 [
                     {
@@ -343,8 +342,12 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
         categories = ["statistics", "regression"]
         examples = [
             FunctionExample(
-                sql=f"SELECT * FROM statsmodels.main.model_stats({_LINEAR_REL}, formula := 'y ~ x')",
-                description="OLS whole-model fit statistics over an inline relation",
+                sql=(
+                    "SELECT round(value, 4) AS r_squared "
+                    f"FROM statsmodels.main.model_stats({_LINEAR_REL}, formula := 'y ~ x') "
+                    "WHERE statistic = 'r_squared'"
+                ),
+                description="Read the R-squared goodness-of-fit for an OLS model of y on x",
             )
         ]
         tags = {
@@ -372,11 +375,8 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
                     "Returns one row per statistic: R-squared and adjusted R-squared, the "
                     "overall F-test (`f_statistic`, `f_pvalue`), `aic`/`bic`, log-likelihood, "
                     "and the observation / degrees-of-freedom counts.\n\n"
-                    "```sql\n"
-                    "SELECT * FROM statsmodels.main.model_stats(\n"
-                    "  (SELECT y, x FROM observations), formula := 'y ~ x'\n"
-                    ");\n"
-                    "```"
+                    "Call it as `model_stats(<relation>, formula := 'y ~ x')` and filter by "
+                    "`statistic`; a ready-to-run version is in this function's example queries."
                 ),
                 keywords=[
                     "model statistics",
@@ -395,14 +395,8 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
                 ],
             ),
             "vgi.category": "Model Fit",
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `statistic` | VARCHAR | Fit-statistic name: `r_squared`, `adj_r_squared`, "
-                "`f_statistic`, `f_pvalue`, `aic`, `bic`, `log_likelihood`, `nobs`, `df_model`, "
-                "`df_resid`. One row per statistic. |\n"
-                "| `value` | DOUBLE | Value of the statistic. |"
-            ),
+            # VGI307/VGI414: structured static result schema derived from the output schema.
+            "vgi.result_columns_schema": result_columns_schema(_MODEL_STATS_SCHEMA),
         }
 
     @classmethod
@@ -450,8 +444,11 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
         categories = ["statistics", "regression"]
         examples = [
             FunctionExample(
-                sql=f"SELECT * FROM statsmodels.main.logit({_LOGIT_REL}, formula := 'y ~ x')",
-                description="Logistic regression of binary y on x over an inline relation",
+                sql=(
+                    "SELECT term, round(coef, 3) AS coef, round(odds_ratio, 3) AS odds_ratio "
+                    f"FROM statsmodels.main.logit({_LOGIT_REL}, formula := 'y ~ x') WHERE term = 'x'"
+                ),
+                description="Logistic fit of binary y on x; read the x log-odds coefficient and odds ratio",
             )
         ]
         tags = {
@@ -482,11 +479,8 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
                     "Returns one row per model term with the log-odds coefficient, standard "
                     "error, Wald z-value, p-value, 95% confidence interval, and the odds ratio "
                     "`exp(coef)`.\n\n"
-                    "```sql\n"
-                    "SELECT * FROM statsmodels.main.logit(\n"
-                    "  (SELECT clicked AS y, age AS x FROM events), formula := 'y ~ x'\n"
-                    ");\n"
-                    "```"
+                    "Call it as `logit(<relation>, formula := 'y ~ x')` with a binary response; "
+                    "a ready-to-run version is in this function's example queries."
                 ),
                 keywords=[
                     "logit",
@@ -503,18 +497,8 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
                 ],
             ),
             "vgi.category": "Regression",
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `term` | VARCHAR | Model term (a predictor or `Intercept`). One row per term. |\n"
-                "| `coef` | DOUBLE | Estimated log-odds coefficient. |\n"
-                "| `std_err` | DOUBLE | Standard error of the coefficient. |\n"
-                "| `z_value` | DOUBLE | Wald z-statistic (coef / std_err). |\n"
-                "| `p_value` | DOUBLE | Two-sided p-value for H0: coef = 0. |\n"
-                "| `ci_lower` | DOUBLE | Lower bound of the 95% confidence interval. |\n"
-                "| `ci_upper` | DOUBLE | Upper bound of the 95% confidence interval. |\n"
-                "| `odds_ratio` | DOUBLE | Odds ratio exp(coef); >1 raises odds, <1 lowers. |"
-            ),
+            # VGI307/VGI414: structured static result schema derived from the output schema.
+            "vgi.result_columns_schema": result_columns_schema(_LOGIT_SCHEMA),
         }
 
     @classmethod
@@ -562,8 +546,12 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
         categories = ["statistics", "regression"]
         examples = [
             FunctionExample(
-                sql=(f"SELECT * FROM statsmodels.main.glm({_COUNT_REL}, formula := 'y ~ x', family := 'poisson')"),
-                description="Poisson GLM of count y on x over an inline relation",
+                sql=(
+                    "SELECT term, round(coef, 3) AS coef "
+                    f"FROM statsmodels.main.glm({_COUNT_REL}, formula := 'y ~ x', family := 'poisson') "
+                    "WHERE term = 'x'"
+                ),
+                description="Poisson GLM of count y on x; read the log-rate coefficient on x",
             )
         ]
         tags = {
@@ -594,12 +582,8 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
                     "(logit link), `poisson` (log link, for counts), and `gamma`. Returns one "
                     "row per term with the link-scale coefficient, standard error, z-value, "
                     "p-value, and 95% confidence bounds.\n\n"
-                    "```sql\n"
-                    "SELECT * FROM statsmodels.main.glm(\n"
-                    "  (SELECT events AS y, exposure AS x FROM logs),\n"
-                    "  formula := 'y ~ x', family := 'poisson'\n"
-                    ");\n"
-                    "```"
+                    "Call it as `glm(<relation>, formula := 'y ~ x', family := 'poisson')`; a "
+                    "ready-to-run version is in this function's example queries."
                 ),
                 keywords=[
                     "glm",
@@ -617,17 +601,8 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
                 ],
             ),
             "vgi.category": "Regression",
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `term` | VARCHAR | Model term (a predictor or `Intercept`). One row per term. |\n"
-                "| `coef` | DOUBLE | Estimated coefficient (on the link scale). |\n"
-                "| `std_err` | DOUBLE | Standard error of the coefficient. |\n"
-                "| `z_value` | DOUBLE | Wald z-statistic (coef / std_err). |\n"
-                "| `p_value` | DOUBLE | Two-sided p-value for H0: coef = 0. |\n"
-                "| `ci_lower` | DOUBLE | Lower bound of the 95% confidence interval. |\n"
-                "| `ci_upper` | DOUBLE | Upper bound of the 95% confidence interval. |"
-            ),
+            # VGI307/VGI414: structured static result schema derived from the output schema.
+            "vgi.result_columns_schema": result_columns_schema(_GLM_SCHEMA),
         }
 
     @classmethod
@@ -677,8 +652,11 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
         categories = ["statistics", "test"]
         examples = [
             FunctionExample(
-                sql=(f"SELECT * FROM statsmodels.main.ttest({_GROUP_REL}, \"column\" := 'v', \"group\" := 'g')"),
-                description="Two-sample t-test across the group column over an inline relation",
+                sql=(
+                    "SELECT round(p_value, 6) AS p_value, round(mean_diff, 2) AS mean_diff "
+                    f"FROM statsmodels.main.ttest({_GROUP_REL}, \"column\" := 'v', \"group\" := 'g')"
+                ),
+                description="Two-sample t-test of v across groups; read the p-value and mean difference",
             )
         ]
         tags = {
@@ -709,12 +687,9 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
                     "must be double-quoted in SQL.\n\n"
                     "Returns a single row: the t-statistic, the two-sided p-value, the degrees "
                     "of freedom, and the difference in group means.\n\n"
-                    "```sql\n"
-                    "SELECT * FROM statsmodels.main.ttest(\n"
-                    "  (SELECT value, arm FROM trial),\n"
-                    "  \"column\" := 'value', \"group\" := 'arm'\n"
-                    ");\n"
-                    "```"
+                    "Call it as `ttest(<relation>, \"column\" := 'value', \"group\" := 'arm')` "
+                    "with both argument names double-quoted; a ready-to-run version is in this "
+                    "function's example queries."
                 ),
                 keywords=[
                     "ttest",
@@ -731,14 +706,8 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
                 ],
             ),
             "vgi.category": "Hypothesis Tests",
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `statistic` | DOUBLE | Two-sample t-statistic. One row total. |\n"
-                "| `p_value` | DOUBLE | Two-sided p-value for equal means. |\n"
-                "| `df` | DOUBLE | Degrees of freedom. |\n"
-                "| `mean_diff` | DOUBLE | mean(group0) - mean(group1). |"
-            ),
+            # VGI307/VGI414: structured static result schema derived from the output schema.
+            "vgi.result_columns_schema": result_columns_schema(_TTEST_SCHEMA),
         }
 
     @classmethod
@@ -788,8 +757,11 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
         categories = ["statistics", "timeseries", "test"]
         examples = [
             FunctionExample(
-                sql=f"SELECT * FROM statsmodels.main.adfuller({_SERIES_REL}, \"column\" := 'v')",
-                description="ADF stationarity test on an ordered inline series",
+                sql=(
+                    "SELECT used_lag, n_obs, round(p_value, 4) AS p_value "
+                    f"FROM statsmodels.main.adfuller({_SERIES_REL}, \"column\" := 'v')"
+                ),
+                description="ADF stationarity test on an ordered series; read the lag, n_obs, and p-value",
             )
         ]
         tags = {
@@ -822,12 +794,9 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
                     "Returns a single row: the test statistic, the MacKinnon p-value (small "
                     "means the series is stationary), the lag count chosen by AIC, and the "
                     "effective observation count.\n\n"
-                    "```sql\n"
-                    "SELECT * FROM statsmodels.main.adfuller(\n"
-                    "  (SELECT value AS v FROM prices ORDER BY day),\n"
-                    "  \"column\" := 'v'\n"
-                    ");\n"
-                    "```"
+                    "Call it as `adfuller(<ordered-relation>, \"column\" := 'v')` with the "
+                    "argument name double-quoted and the rows already time-ordered; a "
+                    "ready-to-run version is in this function's example queries."
                 ),
                 keywords=[
                     "adfuller",
@@ -845,14 +814,8 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
                 ],
             ),
             "vgi.category": "Hypothesis Tests",
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `statistic` | DOUBLE | Augmented Dickey-Fuller test statistic. One row total. |\n"
-                "| `p_value` | DOUBLE | MacKinnon p-value; small => reject unit root (stationary). |\n"
-                "| `used_lag` | INTEGER | Number of lags chosen by AIC. |\n"
-                "| `n_obs` | INTEGER | Observations used after lagging/differencing. |"
-            ),
+            # VGI307/VGI414: structured static result schema derived from the output schema.
+            "vgi.result_columns_schema": result_columns_schema(_ADF_SCHEMA),
         }
 
     @classmethod
