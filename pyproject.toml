@@ -41,6 +41,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# HTTP-serving extra — installed by the Docker image (`.[serve]`). The base
+# dependencies already pin `vgi-python[http]`; this extra names it explicitly so
+# the container build's `pip install '.[serve]'` is self-documenting.
+serve = ["vgi-python[http]>=0.16.0"]
 dev = [
     "pytest>=8",
     "ruff",
