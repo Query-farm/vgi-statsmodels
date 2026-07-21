@@ -166,5 +166,8 @@ jobs:
       - name: vgi-lint
         uses: Query-farm/vgi-lint-check@v1
         with:
-          location: "uv run statsmodels_worker.py"
+          # Lint the installed console script in the project venv rather than
+          # `uv run <script>`: the latter resolves a separate PEP-723 env that can
+          # cache a stale SDK and emit the old catalog schema (false mismatch).
+          location: ".venv/bin/vgi-statsmodels"
           fail-on: info

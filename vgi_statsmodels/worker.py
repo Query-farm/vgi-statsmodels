@@ -266,19 +266,45 @@ _AGENT_TEST_TASKS = json.dumps(
     ]
 )
 
-_SCHEMA_EXAMPLE_QUERIES = (
-    "SELECT * FROM statsmodels.main.ols("
-    "(SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), "
-    "formula := 'y ~ x');\n"
-    "SELECT * FROM statsmodels.main.model_stats("
-    "(SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), "
-    "formula := 'y ~ x');\n"
-    "SELECT * FROM statsmodels.main.glm("
-    "(SELECT * FROM (VALUES (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12)) AS t(x, y)), "
-    "formula := 'y ~ x', family := 'poisson');\n"
-    "SELECT * FROM statsmodels.main.ttest("
-    "(SELECT * FROM (VALUES (10,'a'),(11,'a'),(20,'b'),(22,'b')) AS t(v, g)), "
-    "\"column\" := 'v', \"group\" := 'g');"
+_SCHEMA_EXAMPLE_QUERIES = json.dumps(
+    [
+        {
+            "description": "Fit y ~ x by OLS and read each term's coefficient and p-value.",
+            "sql": (
+                "SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value "
+                "FROM statsmodels.main.ols("
+                "(SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), "
+                "formula := 'y ~ x') ORDER BY term"
+            ),
+        },
+        {
+            "description": "Report the R-squared goodness-of-fit for an OLS model of y on x.",
+            "sql": (
+                "SELECT round(value, 4) AS r_squared "
+                "FROM statsmodels.main.model_stats("
+                "(SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), "
+                "formula := 'y ~ x') WHERE statistic = 'r_squared'"
+            ),
+        },
+        {
+            "description": "Fit a Poisson GLM of count y on x and read the log-rate coefficient on x.",
+            "sql": (
+                "SELECT term, round(coef, 3) AS coef "
+                "FROM statsmodels.main.glm("
+                "(SELECT * FROM (VALUES (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12)) AS t(x, y)), "
+                "formula := 'y ~ x', family := 'poisson') WHERE term = 'x'"
+            ),
+        },
+        {
+            "description": "Two-sample t-test of v across groups; read the p-value and mean difference.",
+            "sql": (
+                "SELECT round(p_value, 6) AS p_value, round(mean_diff, 2) AS mean_diff "
+                "FROM statsmodels.main.ttest("
+                "(SELECT * FROM (VALUES (10,'a'),(11,'a'),(20,'b'),(22,'b')) AS t(v, g)), "
+                "\"column\" := 'v', \"group\" := 'g')"
+            ),
+        },
+    ]
 )
 
 _CATALOG_DESCRIPTION_LLM = (
@@ -337,8 +363,7 @@ _CATALOG_DESCRIPTION_MD = (
     "group means and check a time series for a unit root (stationarity). "
     "Together they let you ask, in SQL alone, which predictors matter and by "
     "how much, whether an effect is significant, how well a model fits, and "
-    "whether a series is stationary. List the schema to see the individual "
-    "functions and their arguments."
+    "whether a series is stationary."
 )
 
 _SCHEMA_DESCRIPTION_LLM = (

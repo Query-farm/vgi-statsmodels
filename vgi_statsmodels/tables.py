@@ -284,17 +284,13 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
             # VGI307/VGI414: structured static result schema, derived from the output
             # pa.schema so it stays in lockstep with what finalize() emits (VGI910).
             "vgi.result_columns_schema": result_columns_schema(_OLS_SCHEMA),
-            "vgi.executable_examples": json.dumps(
-                [
-                    {
-                        "description": "Fit y ~ x by OLS over an inline relation and read the coefficient table.",
-                        "sql": (
-                            "SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value "
-                            f"FROM statsmodels.main.ols({_LINEAR_REL}, formula := 'y ~ x') ORDER BY term"
-                        ),
-                    }
-                ]
-            ),
+            # VGI515: carry the example's description through the vgi.example_queries
+            # tag (the native duckdb_functions().examples column drops descriptions).
+            # Derived from `examples` above so the two carriers can never drift.
+            "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
+            # VGI509: at least one worker-wide guaranteed-runnable example. Same
+            # self-contained OLS query, carried on the vgi.executable_examples tag.
+            "vgi.executable_examples": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
     @classmethod
@@ -397,6 +393,8 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
             "vgi.category": "Model Fit",
             # VGI307/VGI414: structured static result schema derived from the output schema.
             "vgi.result_columns_schema": result_columns_schema(_MODEL_STATS_SCHEMA),
+            # VGI515: described examples carried via vgi.example_queries (see ols).
+            "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
     @classmethod
@@ -499,6 +497,8 @@ class Logit(SinkBuffer[FormulaArgs, DrainState]):
             "vgi.category": "Regression",
             # VGI307/VGI414: structured static result schema derived from the output schema.
             "vgi.result_columns_schema": result_columns_schema(_LOGIT_SCHEMA),
+            # VGI515: described examples carried via vgi.example_queries (see ols).
+            "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
     @classmethod
@@ -603,6 +603,8 @@ class Glm(SinkBuffer[GlmArgs, DrainState]):
             "vgi.category": "Regression",
             # VGI307/VGI414: structured static result schema derived from the output schema.
             "vgi.result_columns_schema": result_columns_schema(_GLM_SCHEMA),
+            # VGI515: described examples carried via vgi.example_queries (see ols).
+            "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
     @classmethod
@@ -708,6 +710,8 @@ class TTest(SinkBuffer[TTestArgs, DrainState]):
             "vgi.category": "Hypothesis Tests",
             # VGI307/VGI414: structured static result schema derived from the output schema.
             "vgi.result_columns_schema": result_columns_schema(_TTEST_SCHEMA),
+            # VGI515: described examples carried via vgi.example_queries (see ols).
+            "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
     @classmethod
@@ -816,6 +820,8 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
             "vgi.category": "Hypothesis Tests",
             # VGI307/VGI414: structured static result schema derived from the output schema.
             "vgi.result_columns_schema": result_columns_schema(_ADF_SCHEMA),
+            # VGI515: described examples carried via vgi.example_queries (see ols).
+            "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
     @classmethod
