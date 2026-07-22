@@ -867,6 +867,9 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
 ]
+serve = [
+    { name = "vgi-python", extra = ["http"] },
+]
 
 [package.metadata]
 requires-dist = [
@@ -880,8 +883,9 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "statsmodels", specifier = ">=0.14" },
     { name = "vgi-python", extras = ["http"], specifier = ">=0.16.0" },
+    { name = "vgi-python", extras = ["http"], marker = "extra == 'serve'", specifier = ">=0.16.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["serve", "dev"]
 
 [[package]]
 name = "waitress"
