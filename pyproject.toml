@@ -32,7 +32,7 @@ classifiers = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "vgi-python[http]>=0.16.0",
+    "vgi-python[http]>=0.30.0",
     "statsmodels>=0.14",
     "patsy>=0.5",
     "numpy",
@@ -44,7 +44,7 @@ dependencies = [
 # HTTP-serving extra — installed by the Docker image (`.[serve]`). The base
 # dependencies already pin `vgi-python[http]`; this extra names it explicitly so
 # the container build's `pip install '.[serve]'` is self-documenting.
-serve = ["vgi-python[http]>=0.16.0"]
+serve = ["vgi-python[http]>=0.30.0"]
 dev = [
     "pytest>=8",
     "ruff",
