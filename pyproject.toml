@@ -32,7 +32,7 @@ classifiers = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "vgi-python[http]>=0.30.0",
+    "vgi-python[http]>=0.46.1",
     "statsmodels>=0.14",
     "patsy>=0.5",
     "numpy",
@@ -44,12 +44,13 @@ dependencies = [
 # HTTP-serving extra — installed by the Docker image (`.[serve]`). The base
 # dependencies already pin `vgi-python[http]`; this extra names it explicitly so
 # the container build's `pip install '.[serve]'` is self-documenting.
-serve = ["vgi-python[http]>=0.30.0"]
+serve = ["vgi-python[http]>=0.46.1"]
 dev = [
     "pytest>=8",
     "ruff",
     "mypy",
     "pydoclint",
+    "pyarrow-stubs",
 ]
 
 [project.scripts]
@@ -114,8 +115,9 @@ warn_return_any = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-# statsmodels and patsy ship no type information; pandas and pyarrow ship
-# py.typed but their public stubs are incomplete under --strict (untyped calls,
-# missing stubs), so silence import/untyped-call noise from these libs only.
-module = ["statsmodels.*", "patsy.*", "pandas.*", "pyarrow.*"]
+# statsmodels and patsy ship no type information; pandas ships py.typed but
+# its public stubs are incomplete under --strict (untyped calls, missing
+# stubs), so silence import/untyped-call noise from these libs only. pyarrow is
+# typed via pyarrow-stubs (dev extra) since pyarrow >= 25 dropped py.typed.
+module = ["statsmodels.*", "patsy.*", "pandas.*"]
 ignore_missing_imports = true

@@ -15,7 +15,7 @@ function only writes its ``finalize`` logic.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 import pandas as pd
 import pyarrow as pa
@@ -35,22 +35,20 @@ class DrainState(ArrowSerializableDataclass):
 def serialize_batch(batch: pa.RecordBatch) -> bytes:
     """Serialize one RecordBatch to a self-describing Arrow IPC stream."""
     sink = pa.BufferOutputStream()
-    # pyarrow's bundled stubs leave the pa.ipc IPC constructors untyped and their
-    # results loosely typed, so we cast back to the concrete types we know hold.
-    with pa.ipc.new_stream(sink, batch.schema) as writer:  # type: ignore[no-untyped-call]
+    with pa.ipc.new_stream(sink, batch.schema) as writer:
         writer.write_batch(batch)
-    return cast(bytes, sink.getvalue().to_pybytes())
+    return sink.getvalue().to_pybytes()
 
 
 def deserialize_batches(value: bytes) -> list[pa.RecordBatch]:
     """Inverse of :func:`serialize_batch` for one stored blob."""
-    reader = pa.ipc.open_stream(pa.BufferReader(value))  # type: ignore[no-untyped-call]
-    return cast("list[pa.RecordBatch]", reader.read_all().to_batches())
+    reader = pa.ipc.open_stream(pa.BufferReader(value))
+    return reader.read_all().to_batches()
 
 
 def input_schema_of(params: Any) -> pa.Schema:
     """Input schema from a process/finalize params object."""
-    schema = params.init_call.bind_call.input_schema
+    schema: pa.Schema | None = params.init_call.bind_call.input_schema
     assert schema is not None
     return schema
 

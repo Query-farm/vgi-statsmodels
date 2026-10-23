@@ -1,0 +1,24 @@
+# Private graders for `vgi-lint simulate` (VGI416). The worker publishes only
+# task names and prompts in vgi.agent_test_tasks; these canonical solutions and
+# grading options stay in the repo and are merged by task name.
+tasks:
+  - name: ols_coefficients
+    reference_sql: "SELECT term, round(coef, 2) AS coef FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x')"
+    unordered: true
+  - name: model_fit_r_squared
+    reference_sql: "SELECT round(value, 3) AS r_squared FROM statsmodels.main.model_stats((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x') WHERE statistic = 'r_squared'"
+    ignore_column_names: true
+  - name: logit_effect_direction
+    reference_sql: "SELECT round(coef, 2) AS coef FROM statsmodels.main.logit((SELECT * FROM (VALUES (1,0),(2,0),(3,0),(4,1),(5,0),(6,1),(7,0),(8,1),(9,1),(10,1),(11,1),(12,1)) AS t(x, y)), formula := 'y ~ x') WHERE term = 'x'"
+    ignore_column_names: true
+  - name: poisson_glm_rate
+    reference_sql: "SELECT round(coef, 2) AS coef FROM statsmodels.main.glm((SELECT * FROM (VALUES (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12)) AS t(x, y)), formula := 'y ~ x', family := 'poisson') WHERE term = 'x'"
+    ignore_column_names: true
+  - name: two_group_ttest
+    reference_sql: "SELECT round(p_value, 6) AS p_value FROM statsmodels.main.ttest((SELECT * FROM (VALUES (10,'a'),(11,'a'),(9,'a'),(12,'a'),(10,'a'),(20,'b'),(22,'b'),(19,'b'),(21,'b'),(20,'b')) AS t(v, g)), \"column\" := 'v', \"group\" := 'g')"
+    ignore_column_names: true
+  - name: adf_stationarity
+    reference_sql: "SELECT used_lag, n_obs FROM statsmodels.main.adfuller((SELECT * FROM (VALUES (0,10.0),(1,13.82),(2,16.66),(3,14.87),(4,14.38),(5,12.71),(6,7.79),(7,6.64),(8,7.02),(9,6.14),(10,9.6),(11,13.56),(12,13.97),(13,15.99),(14,16.27),(15,12.06),(16,10.13),(17,8.5),(18,5.1),(19,6.4),(20,9.32),(21,10.17),(22,13.96),(23,16.72),(24,14.83),(25,14.25),(26,12.54),(27,7.64),(28,6.56),(29,7.04)) AS t(t, v) ORDER BY t), \"column\" := 'v')"
+  - name: glm_family_for_counts
+    reference_sql: "SELECT family FROM statsmodels.main.glm_families WHERE typical_outcome = 'Non-negative integer counts'"
+    ignore_column_names: true

@@ -20,11 +20,6 @@ from vgi.catalog import Catalog, Schema, View
 
 from vgi_statsmodels import stats
 from vgi_statsmodels.tables import (
-    _COUNT_REL,
-    _GROUP_REL,
-    _LINEAR_REL,
-    _LOGIT_REL,
-    _SERIES_REL,
     TABLE_FUNCTIONS,
 )
 
@@ -152,10 +147,11 @@ _GLM_FAMILIES_VIEW = View(
 
 # ---------------------------------------------------------------------------
 # Agent-suitability suite (VGI152). Each task's prompt inlines its own data so
-# a simulated analyst can solve it end-to-end; the `reference_sql` is the
-# grader's canonical solution and is deterministic (fixed data + rounding /
-# integer outputs). Column-name-only or row-order differences are tolerated
-# per-task via `ignore_column_names` / `unordered`.
+# a simulated analyst can solve it end-to-end. Only the public {name, prompt}
+# pairs are published here (VGI416); the grader's canonical `reference_sql`
+# (deterministic: fixed data + rounding / integer outputs) and the per-task
+# `ignore_column_names` / `unordered` options live in vgi-agent-tests.yaml at
+# the repo root.
 # ---------------------------------------------------------------------------
 
 _AGENT_TEST_TASKS = json.dumps(
@@ -169,10 +165,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "Return one row per model term (the intercept and x) with its estimated "
                 "coefficient rounded to 2 decimal places."
             ),
-            "reference_sql": (
-                f"SELECT term, round(coef, 2) AS coef FROM statsmodels.main.ols({_LINEAR_REL}, formula := 'y ~ x')"
-            ),
-            "unordered": True,
         },
         {
             "name": "model_fit_r_squared",
@@ -182,12 +174,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "how well does an OLS model of y on x fit the data? Report the R-squared "
                 "goodness-of-fit statistic, rounded to 3 decimal places."
             ),
-            "reference_sql": (
-                "SELECT round(value, 3) AS r_squared "
-                f"FROM statsmodels.main.model_stats({_LINEAR_REL}, formula := 'y ~ x') "
-                "WHERE statistic = 'r_squared'"
-            ),
-            "ignore_column_names": True,
         },
         {
             "name": "logit_effect_direction",
@@ -197,12 +183,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "(10,1),(11,1),(12,1). Report the estimated log-odds coefficient on x, "
                 "rounded to 2 decimal places."
             ),
-            "reference_sql": (
-                "SELECT round(coef, 2) AS coef "
-                f"FROM statsmodels.main.logit({_LOGIT_REL}, formula := 'y ~ x') "
-                "WHERE term = 'x'"
-            ),
-            "ignore_column_names": True,
         },
         {
             "name": "poisson_glm_rate",
@@ -212,12 +192,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "generalized linear model of y on x and report the coefficient on x "
                 "(on the log link scale), rounded to 2 decimal places."
             ),
-            "reference_sql": (
-                "SELECT round(coef, 2) AS coef "
-                f"FROM statsmodels.main.glm({_COUNT_REL}, formula := 'y ~ x', family := 'poisson') "
-                "WHERE term = 'x'"
-            ),
-            "ignore_column_names": True,
         },
         {
             "name": "two_group_ttest",
@@ -228,11 +202,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "compare the mean of v across the two groups and report the two-sided "
                 "p-value, rounded to 6 decimal places."
             ),
-            "reference_sql": (
-                "SELECT round(p_value, 6) AS p_value "
-                f"FROM statsmodels.main.ttest({_GROUP_REL}, \"column\" := 'v', \"group\" := 'g')"
-            ),
-            "ignore_column_names": True,
         },
         {
             "name": "adf_stationarity",
@@ -246,9 +215,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "(27,7.64),(28,6.56),(29,7.04). Report how many lags the test chose "
                 "(used_lag) and how many observations it used (n_obs)."
             ),
-            "reference_sql": (
-                f"SELECT used_lag, n_obs FROM statsmodels.main.adfuller({_SERIES_REL}, \"column\" := 'v')"
-            ),
         },
         {
             "name": "glm_family_for_counts",
@@ -258,10 +224,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "should you use to model non-negative integer count outcomes? Return just that "
                 "family name."
             ),
-            "reference_sql": (
-                "SELECT family FROM statsmodels.main.glm_families WHERE typical_outcome = 'Non-negative integer counts'"
-            ),
-            "ignore_column_names": True,
         },
     ]
 )
@@ -433,7 +395,7 @@ _STATSMODELS_CATALOG = Catalog(
     },
     schemas=[
         Schema(
-            name="main",
+            path=["main"],
             comment="Regression (OLS/Logit/GLM) and hypothesis tests (t-test, ADF) for SQL",
             tags={
                 "vgi.title": "statsmodels — main",
