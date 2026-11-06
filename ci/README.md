@@ -15,7 +15,9 @@ extension from the Haybarn community channel:
    `.venv/bin/vgi-statsmodels` is the installed console-script stdio worker the
    extension can spawn. The main dependency is `vgi-python[http]`, so the sync
    also installs `waitress` (the HTTP server used for the `http` transport leg).
-2. **Download the runner** — the matching `haybarn_unittest-*` asset per
+2. **Download the runner** — from the newest `haybarn-v2.0.*` release (haybarn
+   2.0's community `vgi` extension is the one that speaks the worker's VGI
+   protocol, vgi.v3 / 3.1), the matching `haybarn_unittest-*` asset per
    platform from the latest Haybarn release.
 3. **Preprocess** — the standalone runner links none of the extensions the
    tests gate on, so [`preprocess-require.awk`](preprocess-require.awk) rewrites
@@ -26,7 +28,7 @@ extension from the Haybarn community channel:
    and everything else pass through untouched.
 4. **Run** — [`run-integration.sh`](run-integration.sh) stages the preprocessed
    tree, resolves `VGI_STATSMODELS_WORKER` per transport (see below), warms the
-   extension cache once, then runs the suite in a single `haybarn-unittest`
+   extension cache once, then runs the suite in a single `haybarn-unittest --keep-home`
    invocation. Any failed assertion exits non-zero and fails the job.
 
 ## Three transports (one suite)

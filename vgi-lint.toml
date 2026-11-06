@@ -1,7 +1,7 @@
 # vgi-lint-check configuration for the vgi-statsmodels worker.
 #
 # Discovered by both the local `vgi-lint` CLI and the
-# `Query-farm/vgi-lint-check@v1` CI action (which reads config from the
+# `Query-farm/vgi-lint-check@v2` CI action (which reads config from the
 # working directory). No rule is waived or disabled here — this only sizes the
 # execution *window* so the linter measures scan responsiveness instead of
 # worker-spawn contention.
