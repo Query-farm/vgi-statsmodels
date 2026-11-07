@@ -17,7 +17,7 @@ stationarity test — backed by [statsmodels](https://www.statsmodels.org/) and
 
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
-ATTACH 'statsmodels' (TYPE vgi, LOCATION 'uv run statsmodels_worker.py');
+ATTACH 'statsmodels' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.2.0 vgi-statsmodels');
 
 -- OLS regression: one row per term (incl. Intercept) with full inference
 SELECT * FROM statsmodels.ols((SELECT y, x1, x2 FROM d),
@@ -40,6 +40,39 @@ SELECT * FROM statsmodels.ttest((SELECT value, arm FROM d),
 -- Augmented Dickey-Fuller stationarity test on an ORDERED series
 SELECT * FROM statsmodels.adfuller((SELECT v FROM d ORDER BY t), "column" := 'v');
 ```
+
+## Quick start
+
+The worker isn't on PyPI; [uv](https://docs.astral.sh/uv/) runs it straight from a tagged release on GitHub. `uvx` builds an isolated environment on the first ATTACH and reuses it afterwards:
+
+```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+
+ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.2.0 vgi-statsmodels');
+
+-- Fit y ~ x by OLS and read each term's coefficient and p-value.
+SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), formula := 'y ~ x') ORDER BY term;
+
+-- Report the R-squared goodness-of-fit for an OLS model of y on x.
+SELECT round(value, 4) AS r_squared FROM statsmodels.main.model_stats((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), formula := 'y ~ x') WHERE statistic = 'r_squared';
+```
+
+Change `@v0.2.0` to move to a newer release.
+
+### Other ways to run it
+
+- **Docker** (the image bundles the worker and its dependencies):
+
+  ```sql
+  ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-statsmodels:0.2.0');
+  ```
+
+- **From a local checkout** (`git clone https://github.com/Query-farm/vgi-statsmodels`), point `LOCATION` at `uv run --project /path/to/vgi-statsmodels vgi-statsmodels`.
+
+### Build from source
+
+To build and test the worker yourself from a checkout, see [Development](#development).
 
 ## Data flow: one relation in, a result set out
 
