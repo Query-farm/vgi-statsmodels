@@ -133,4 +133,4 @@ uv run --no-sync ruff check . && uv run --no-sync mypy vgi_statsmodels/
 statsmodels_worker.py"`, puts `~/.local/bin` on PATH, and runs `haybarn-unittest --keep-home
 --test-dir . "test/sql/*"`. Install the runner once with
 `uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'`
-(haybarn 2.0 is required for VGI protocol vgi.v3 / 3.1). Everything is offline/hermetic.
+(haybarn 2.0 is required for VGI protocol vgi.v3 / 3.2). Everything is offline/hermetic.
