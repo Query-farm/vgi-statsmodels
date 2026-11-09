@@ -1,6 +1,6 @@
 [project]
 name = "vgi-statsmodels"
-version = "0.2.0"
+version = "0.3.0"
 description = "Regression with full statistical inference (OLS, Logit, GLM) and hypothesis tests (t-test, ADF) for DuckDB via VGI"
 readme = "README.md"
 keywords = [
