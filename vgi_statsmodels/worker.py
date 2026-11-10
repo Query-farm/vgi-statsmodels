@@ -364,7 +364,8 @@ _STATSMODELS_CATALOG = Catalog(
     ),
     source_url="https://github.com/Query-farm/vgi-statsmodels",
     tags={
-        "vgi.title": "Regression & Statistical Inference",
+        "vgi.title": "Statsmodels Regression",
+        "vgi.subtitle": "Regression fits and hypothesis tests over SQL relations.",
         "vgi.keywords": json.dumps(
             [
                 "statsmodels",
@@ -398,7 +399,7 @@ _STATSMODELS_CATALOG = Catalog(
             path=["main"],
             comment="Regression (OLS/Logit/GLM) and hypothesis tests (t-test, ADF) for SQL",
             tags={
-                "vgi.title": "statsmodels — main",
+                "vgi.title": "Regression and Tests",
                 "vgi.keywords": json.dumps(
                     [
                         "regression",
