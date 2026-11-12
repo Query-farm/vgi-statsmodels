@@ -17,7 +17,7 @@ stationarity test — backed by [statsmodels](https://www.statsmodels.org/) and
 
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
-ATTACH 'statsmodels' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.3.0 vgi-statsmodels');
+ATTACH 'statsmodels' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.0 vgi-statsmodels');
 
 -- OLS regression: one row per term (incl. Intercept) with full inference
 SELECT * FROM statsmodels.ols((SELECT y, x1, x2 FROM d),
@@ -49,7 +49,7 @@ The worker isn't on PyPI; [uv](https://docs.astral.sh/uv/) runs it straight from
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.3.0 vgi-statsmodels');
+ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.0 vgi-statsmodels');
 
 -- Fit y ~ x by OLS and read each term's coefficient and p-value.
 SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), formula := 'y ~ x') ORDER BY term;
@@ -58,14 +58,14 @@ SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmode
 SELECT round(value, 4) AS r_squared FROM statsmodels.main.model_stats((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), formula := 'y ~ x') WHERE statistic = 'r_squared';
 ```
 
-Change `@v0.3.0` to move to a newer release.
+Change `@v0.4.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker and its dependencies):
 
   ```sql
-  ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-statsmodels:0.3.0');
+  ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-statsmodels:0.4.0');
   ```
 
 - **From a local checkout** (`git clone https://github.com/Query-farm/vgi-statsmodels`), point `LOCATION` at `uv run --project /path/to/vgi-statsmodels vgi-statsmodels`.
