@@ -261,7 +261,7 @@ def glm(df: pd.DataFrame, *, formula: str, family: str = "gaussian") -> dict[str
 
 
 def ttest(df: pd.DataFrame, *, column: str, group: str) -> dict[str, list[Any]]:
-    """Two-sample (Welch-style independent) t-test across a group column.
+    """Two-sample (pooled-variance, independent) t-test across a group column.
 
     Compares the mean of ``column`` between the two distinct levels of
     ``group``. Uses the pooled-variance two-sample t-test (``usevar='pooled'``),
