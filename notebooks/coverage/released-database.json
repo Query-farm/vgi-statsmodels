@@ -1,0 +1,45 @@
+{
+  "query": "SELECT * FROM duckdb_databases() WHERE database_name='statsmodels'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "path",
+    "comment",
+    "tags",
+    "internal",
+    "type",
+    "readonly",
+    "encrypted",
+    "cipher",
+    "options"
+  ],
+  "rows": [
+    [
+      "statsmodels",
+      22592,
+      null,
+      "statsmodels-powered regression and inference for DuckDB/SQL: OLS/Logit/GLM fits, model statistics, and t-test/ADF hypothesis tests",
+      {
+        "vgi.agent_test_tasks": "[{\"name\": \"ols_coefficients\", \"prompt\": \"Using the statsmodels worker, fit an ordinary least squares regression of y on x for these observations with columns (x, y): (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8). Return one row per model term (the intercept and x) with its estimated coefficient rounded to 2 decimal places.\"}, {\"name\": \"model_fit_r_squared\", \"prompt\": \"For the same 8 observations with columns (x, y): (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8), how well does an OLS model of y on x fit the data? Report the R-squared goodness-of-fit statistic, rounded to 3 decimal places.\"}, {\"name\": \"logit_effect_direction\", \"prompt\": \"Fit a logistic regression of the binary outcome y on x for these rows with columns (x, y): (1,0),(2,0),(3,0),(4,1),(5,0),(6,1),(7,0),(8,1),(9,1),(10,1),(11,1),(12,1). Report the estimated log-odds coefficient on x, rounded to 2 decimal places.\"}, {\"name\": \"poisson_glm_rate\", \"prompt\": \"These rows are counts y rising with x, columns (x, y): (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12). Fit a Poisson generalized linear model of y on x and report the coefficient on x (on the log link scale), rounded to 2 decimal places.\"}, {\"name\": \"two_group_ttest\", \"prompt\": \"Two groups 'a' and 'b' have these measurements, columns (v, g): (10,'a'),(11,'a'),(9,'a'),(12,'a'),(10,'a'),(20,'b'),(22,'b'),(19,'b'),(21,'b'),(20,'b'). Run a two-sample t-test to compare the mean of v across the two groups and report the two-sided p-value, rounded to 6 decimal places.\"}, {\"name\": \"adf_stationarity\", \"prompt\": \"Run the Augmented Dickey-Fuller unit-root test on this time series. The rows have columns (t, v) and must be tested in ascending t order: (0,10.0),(1,13.82),(2,16.66),(3,14.87),(4,14.38),(5,12.71),(6,7.79),(7,6.64),(8,7.02),(9,6.14),(10,9.6),(11,13.56),(12,13.97),(13,15.99),(14,16.27),(15,12.06),(16,10.13),(17,8.5),(18,5.1),(19,6.4),(20,9.32),(21,10.17),(22,13.96),(23,16.72),(24,14.83),(25,14.25),(26,12.54),(27,7.64),(28,6.56),(29,7.04). Report how many lags the test chose (used_lag) and how many observations it used (n_obs).\"}, {\"name\": \"glm_family_for_counts\", \"prompt\": \"The statsmodels worker publishes a discovery table of the error families its generalized linear model (glm) supports. Consult it: which single family name should you use to model non-negative integer count outcomes? Return just that family name.\"}]",
+        "vgi.author": "Query.Farm",
+        "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
+        "vgi.doc_llm": "Run regression with full statistical inference and classic hypothesis tests directly over SQL relations. Fit ordinary least squares (ols), logistic (logit), and generalized linear models (glm: gaussian/binomial/poisson/gamma) from a Patsy formula and get a coefficient table with standard errors, t/z statistics, p-values, and 95% confidence intervals; get whole-model fit statistics (model_stats: R-squared, AIC/BIC, F-test, log-likelihood); run a two-sample t-test (ttest) for a difference in means; and test a time series for a unit root with the Augmented Dickey-Fuller test (adfuller). Use it to answer 'which predictors matter and by how much', 'is this effect significant', 'how well does the model fit', 'do these two groups differ', and 'is this series stationary' \u2014 all in SQL, powered by statsmodels.",
+        "vgi.doc_md": "# statsmodels: Regression & Statistical Inference in SQL\n\n![statsmodels logo](https://www.statsmodels.org/stable/_images/statsmodels-logo-v2-horizontal.svg)\n\nRun regression with full statistical inference and classic hypothesis tests directly in DuckDB SQL: fit OLS, logistic, and generalized linear models and get coefficient tables complete with standard errors, t/z-statistics, p-values, and 95% confidence intervals \u2014 no Python notebook required.\n\nThis extension brings the proven statistics of the [statsmodels](https://www.statsmodels.org/stable/index.html) library ([source on GitHub](https://github.com/statsmodels/statsmodels)) to anyone who already speaks SQL. It is built for data analysts, data scientists, and engineers who want trustworthy estimation and inference \u2014 effect sizes, significance, model fit, and stationarity checks \u2014 without exporting data to a separate stats environment. Every function takes a whole input relation as a `(SELECT ...)` subquery, so you model the result of any DuckDB query: joins, filters, window functions, and aggregates all flow straight into the fit.\n\nUnder the hood each call buffers the input relation, builds the design matrices from a [Patsy](https://patsy.readthedocs.io/en/latest/) ([source on GitHub](https://github.com/pydata/patsy)) `formula` (for the regressions) or from named column roles (for the tests), then runs the corresponding statsmodels routine once and returns the results as an ordinary SQL table you can join, filter, and persist. The familiar R-style formula syntax (`y ~ x1 + x2 + C(group)`) makes specifying interactions, transformations, and categorical encodings concise and readable.\n\nThe capabilities group into three areas. **Regression** estimates how predictors drive an outcome \u2014 linear for continuous responses, logistic for binary events, and generalized linear models for counts and other exponential-family outcomes \u2014 always returning coefficients with standard errors, t- or z-statistics, p-values, and 95% confidence intervals. **Model fit** reports whole-model diagnostics such as R-squared, adjusted R-squared, the F-test, AIC/BIC, and log-likelihood so you can judge how well a linear model explains the data. **Hypothesis tests** compare two group means and check a time series for a unit root (stationarity). Together they let you ask, in SQL alone, which predictors matter and by how much, whether an effect is significant, how well a model fits, and whether a series is stationary.",
+        "vgi.keywords": "[\"statsmodels\", \"regression\", \"ols\", \"logit\", \"glm\", \"model statistics\", \"t-test\", \"adfuller\", \"hypothesis test\", \"p-value\", \"confidence interval\", \"inference\", \"stationarity\", \"statistics\", \"patsy formula\"]",
+        "vgi.license": "MIT",
+        "vgi.subtitle": "Regression fits and hypothesis tests over SQL relations.",
+        "vgi.support_contact": "https://github.com/Query-farm/vgi-statsmodels/issues",
+        "vgi.support_policy_url": "https://github.com/Query-farm/vgi-statsmodels/blob/main/README.md",
+        "vgi.title": "Statsmodels Regression"
+      },
+      false,
+      "vgi",
+      false,
+      false,
+      null,
+      {
+        "location": "uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.0 vgi-statsmodels"
+      }
+    ]
+  ]
+}

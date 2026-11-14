@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-released.json",
+      "sha256": "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "catalog_sha256": "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+        "notes": "All seven logical surfaces, including the discoverable native view, retained and demonstrated. Current public main aaac9b3b3c1350329fbaf006bace75e413095fc8 registers the same six table functions and glm_families view as release v0.4.0. Exhaustive source/dependency diff contains composed example/task metadata and a corrected ttest docstring (pooled, not Welch), with unchanged domain execution and signatures. Only the release is executed; current-interface coverage is separately reviewed."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "catalog_sha256": "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1",
+        "notes": "All seven logical surfaces, including the discoverable native view, retained and demonstrated. Current public main aaac9b3b3c1350329fbaf006bace75e413095fc8 registers the same six table functions and glm_families view as release v0.4.0. Exhaustive source/dependency diff contains composed example/task metadata and a corrected ttest docstring (pooled, not Welch), with unchanged domain execution and signatures. Only the release is executed; current-interface coverage is separately reviewed."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_pooled_and_within_site_slopes.ipynb",
+      "sha256": "69e0a50121ec2a043465b9850ef1db5e4e4b0ac484ae97c0281062bcfee84ffb",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "7b280ed0914ac8af5cb86057cbbf1a0ba3e7e0887061d0120bf34dd2eae230f3"
+      }
+    },
+    {
+      "path": "02_odds_are_not_probability_changes.ipynb",
+      "sha256": "2f7aab672f9a0a2c8ebd8d26b1d7631d29c27f5856038660f3805c63fc03f90a",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "ae5e212b16afdff367473d63ec22337b2cdffd393b72dae237d538921717bff7"
+      }
+    },
+    {
+      "path": "03_a_mean_shift_is_not_a_unit_root.ipynb",
+      "sha256": "826965e92b291d693f4ab30a3707e3bc44b1a519e40b983a1de98c345c2e910f",
+      "execution": {
+        "path": "coverage/run-03.json",
+        "sha256": "79c44a60df788a137f35ffda993943312f4fddbf21d51f28f6c7bb4aac2f52bb"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "ols"
+      },
+      "notebook": "01_pooled_and_within_site_slopes.ipynb",
+      "sql": [
+        {
+          "cell": "509ded6b",
+          "reference": "statsmodels.ols"
+        }
+      ],
+      "narrative_cells": [
+        "cf69a3aa"
+      ],
+      "result_cells": [
+        "dfef7d03",
+        "bdb2b7cf"
+      ],
+      "interpretation_cells": [
+        "dfef7d03"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "69e0a50121ec2a043465b9850ef1db5e4e4b0ac484ae97c0281062bcfee84ffb",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Compare pooled and within-site associations on exactly the same complete observations.",
+        "finding": "Pooled slope +1.092 versus adjusted −1.491 units/hour at default offset30. SQL independently recovers slopes, R² and classical standard errors. Offset10 changes pooled slope but preserves adjusted slope/interval; no causal or held-out claim."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "model_stats"
+      },
+      "notebook": "01_pooled_and_within_site_slopes.ipynb",
+      "sql": [
+        {
+          "cell": "509ded6b",
+          "reference": "statsmodels.model_stats"
+        }
+      ],
+      "narrative_cells": [
+        "cf69a3aa"
+      ],
+      "result_cells": [
+        "dfef7d03",
+        "bdb2b7cf"
+      ],
+      "interpretation_cells": [
+        "bdb2b7cf"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "69e0a50121ec2a043465b9850ef1db5e4e4b0ac484ae97c0281062bcfee84ffb",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Keep model population, degrees of freedom and fit statistics aligned with each coefficient specification.",
+        "finding": "Both models use120 rows, residual degrees118/117; SQL residual reconstruction agrees with returned R². Adding site improves in-sample fit, explicitly not evidence of forecasting performance."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "glm_families"
+      },
+      "notebook": "02_odds_are_not_probability_changes.ipynb",
+      "sql": [
+        {
+          "cell": "family-sql",
+          "reference": "statsmodels.main.glm_families"
+        }
+      ],
+      "narrative_cells": [
+        "family-story"
+      ],
+      "result_cells": [
+        "family-result"
+      ],
+      "interpretation_cells": [
+        "family-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "2f7aab672f9a0a2c8ebd8d26b1d7631d29c27f5856038660f3805c63fc03f90a",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Select the response family and link from the actual reference view before fitting.",
+        "finding": "Four family rows retained; binary data calls for binomial/logit, not Poisson merely because events are integer. This choice is used in the next actual GLM call."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "logit"
+      },
+      "notebook": "02_odds_are_not_probability_changes.ipynb",
+      "sql": [
+        {
+          "cell": "fit-sql",
+          "reference": "statsmodels.main.logit"
+        }
+      ],
+      "narrative_cells": [
+        "fit-story"
+      ],
+      "result_cells": [
+        "fit-result",
+        "probability-result"
+      ],
+      "interpretation_cells": [
+        "probability-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "2f7aab672f9a0a2c8ebd8d26b1d7631d29c27f5856038660f3805c63fc03f90a",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Translate a log-odds coefficient to probabilities and fixed-hour contrasts with explicit input units.",
+        "finding": "Default slope0.8162 gives odds multiplier2.262 per hour; fixed-hour probability changes11.6–20.1percentage points across baselines. Halving input unit halves slope/SE and square-roots one-unit odds multiplier, preserving probabilities/hour contrasts."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "glm"
+      },
+      "notebook": "02_odds_are_not_probability_changes.ipynb",
+      "sql": [
+        {
+          "cell": "fit-sql",
+          "reference": "statsmodels.main.glm"
+        }
+      ],
+      "narrative_cells": [
+        "fit-story"
+      ],
+      "result_cells": [
+        "fit-result",
+        "probability-result"
+      ],
+      "interpretation_cells": [
+        "fit-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "2f7aab672f9a0a2c8ebd8d26b1d7631d29c27f5856038660f3805c63fc03f90a",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Cross-check equivalent binomial/logit GLM and logit interfaces on the same600 rows.",
+        "finding": "Returned coefficients and model-based standard errors agree to tolerance; SQL probabilities match across all241 grid points. Agreement is a consistency check, not model calibration or causal validation."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "ttest"
+      },
+      "notebook": "03_a_mean_shift_is_not_a_unit_root.ipynb",
+      "sql": [
+        {
+          "cell": "ttest-sql",
+          "reference": "statsmodels.main.ttest"
+        }
+      ],
+      "narrative_cells": [
+        "ttest-story"
+      ],
+      "result_cells": [
+        "test-result"
+      ],
+      "interpretation_cells": [
+        "test-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "826965e92b291d693f4ab30a3707e3bc44b1a519e40b983a1de98c345c2e910f",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Make equal-variance assumptions, first-group subtraction and pooled-test arithmetic explicit.",
+        "finding": "Two independent80-row normal groups give A−B−0.744, pooledSE0.153,df158,t−4.855,p2.87e−6. SQL arithmetic reproduces the worker. Removing the generated unit shift changes difference by exactly+1 and leavesSE/df fixed; no equivalence claim."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "adfuller"
+      },
+      "notebook": "03_a_mean_shift_is_not_a_unit_root.ipynb",
+      "sql": [
+        {
+          "cell": "adf-sql",
+          "reference": "statsmodels.main.adfuller"
+        }
+      ],
+      "narrative_cells": [
+        "adf-story"
+      ],
+      "result_cells": [
+        "adf-result"
+      ],
+      "interpretation_cells": [
+        "adf-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T22:10:30.391262+00:00",
+        "notebook_sha256": "826965e92b291d693f4ab30a3707e3bc44b1a519e40b983a1de98c345c2e910f",
+        "catalog_sha256": [
+          "32792329af0e1080812115af205c39b8cd48d35e08aaeb4a3206998d7706eabf",
+          "a6f7b609f8c2826c8ca5104812f8418c31967e32c17a1f18be2593f6edc2a2e1"
+        ],
+        "purpose": "Test a unit-root null on explicitly ordered constructed series separately from independent-group means.",
+        "finding": "240-point white noise rejects at0.05(p5.46e−29); its cumulative random walk does not(p0.246), both chosenlag0/n239. ADF outputs and bothseries remain identical when independent batch shift changes; no stationarity guarantee or residual cointegration claim."
+      }
+    }
+  ]
+}

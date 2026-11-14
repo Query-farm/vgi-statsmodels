@@ -1,0 +1,44 @@
+{
+  "query": "SELECT * FROM duckdb_views() WHERE database_name='statsmodels'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "schema_oid",
+    "view_name",
+    "view_oid",
+    "comment",
+    "tags",
+    "internal",
+    "temporary",
+    "column_count",
+    "sql",
+    "is_bound"
+  ],
+  "rows": [
+    [
+      "statsmodels",
+      22592,
+      "main",
+      22593,
+      "glm_families",
+      22732,
+      "The GLM error families the glm() function accepts, one per row (discovery view).",
+      {
+        "domain": "statistics",
+        "topic": "statistical-modeling",
+        "vgi.category": "Regression",
+        "vgi.doc_llm": "# glm_families\n\nA small browsable reference view listing the **GLM error families** the `glm` function accepts as its `family` argument. Each row pairs a family name with its default link function, the kind of outcome it models, and a concrete example use.\n\n**Use it** to discover valid `family` values before calling `glm`: the `family` column is exactly what you pass as `glm(<relation>, formula := '...', family := '<family>')`. Four families are available: `gaussian` (identity link, equals OLS), `binomial` (logit link, for binary/proportion outcomes), `poisson` (log link, for counts), and `gamma` (inverse link, for positive right-skewed responses). The view is a fixed in-memory table, so it scans instantly with no arguments.",
+        "vgi.doc_md": "## GLM error families\n\nA reference view of the four error families the [statsmodels](https://www.statsmodels.org/) GLM fit supports, exposed so you can browse valid `family` values before calling `glm`.\n\nEach row gives the `family` name (what you pass as `glm(..., family := '<family>')`), its default `link` function, the `typical_outcome` it models, and an `example_use`. The families are `gaussian` (identity link, equivalent to OLS), `binomial` (logit link, binary or proportion outcomes), `poisson` (log link, count outcomes), and `gamma` (inverse link, positive right-skewed outcomes).\n\nIt is a fixed four-row table, so it always scans instantly.",
+        "vgi.example_queries": "[{\"description\": \"List every GLM family with its link function and the outcome it suits.\", \"sql\": \"SELECT family, link, typical_outcome FROM statsmodels.main.glm_families ORDER BY family\"}, {\"description\": \"Which GLM family should you use for count outcomes?\", \"sql\": \"SELECT family, example_use FROM statsmodels.main.glm_families WHERE typical_outcome = 'Non-negative integer counts'\"}]",
+        "vgi.keywords": "[\"glm families\", \"error family\", \"family\", \"link function\", \"gaussian\", \"binomial\", \"poisson\", \"gamma\", \"discovery\", \"reference\", \"generalized linear model\"]",
+        "vgi.title": "GLM Error Families"
+      },
+      false,
+      false,
+      null,
+      "CREATE VIEW glm_families AS SELECT * FROM (SELECT * FROM (VALUES ('gaussian', 'identity', 'Continuous, roughly symmetric outcomes', 'Reproduces ordinary least squares (OLS).'), ('binomial', 'logit', 'Binary (0/1) or proportion outcomes', 'Yes/no events; the same fit as logit().'), ('poisson', 'log', 'Non-negative integer counts', 'Event counts such as purchases or arrivals.'), ('gamma', 'inverse', 'Positive, right-skewed continuous outcomes', 'Durations, insurance claim sizes, spend.')) AS valueslist) AS t(\"family\", link, typical_outcome, example_use);",
+      false
+    ]
+  ]
+}

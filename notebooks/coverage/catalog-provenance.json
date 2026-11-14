@@ -1,0 +1,11 @@
+{
+  "repository": "Query-farm/vgi-statsmodels",
+  "release_tag": "v0.4.0",
+  "release_revision": "03c255e3439bda6224ab7e9424d2494526069ddf",
+  "current_public_revision": "aaac9b3b3c1350329fbaf006bace75e413095fc8",
+  "engine": "Haybarn 2.0.0rc11 / VGI e75482339d",
+  "released_launch": "uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.0 vgi-statsmodels",
+  "comparison": "Current public main aaac9b3b3c1350329fbaf006bace75e413095fc8 registers the same six table functions and glm_families view as release v0.4.0. Exhaustive source/dependency diff contains composed example/task metadata and a corrected ttest docstring (pooled, not Welch), with unchanged domain execution and signatures. Only the release is executed; current-interface coverage is separately reviewed.",
+  "data_isolation": "Inline synthetic fixed-seed observations only; empty temporary SQL-secret storage and persistence disabled. No accounts or external analytical data.",
+  "captured_at": "2026-11-14T22:10:30.391262+00:00"
+}

@@ -1,0 +1,286 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='statsmodels'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "statsmodels",
+      "22592",
+      "main",
+      "model_stats",
+      null,
+      "table",
+      "OLS whole-model fit statistics as (statistic, value) rows: r_squared, adj_r_squared, f_statistic, f_pvalue, aic, bic, log_likelihood, nobs, df_model, df_resid. Pass a Patsy formula.",
+      null,
+      {
+        "vgi.category": "Model Fit",
+        "vgi.doc_llm": "# model_stats\n\nFit the same **OLS** model as `ols` but return the **whole-model fit statistics** instead of the per-term coefficient table. Pass the data as a `(SELECT ...)` subquery and a Patsy `formula` named argument.\n\n**Use it** to judge how well a linear model explains the data: the result is one `(statistic, value)` row per metric, covering `r_squared`, `adj_r_squared`, `f_statistic`, `f_pvalue`, `aic`, `bic`, `log_likelihood`, `nobs`, `df_model`, and `df_resid`. Reach for `ols` (same formula) when you need individual coefficients and their significance instead.\n\n**Edge cases:** a bad formula, a missing or non-numeric column, empty input, or a singular design raises a clean `StatsError`.",
+        "vgi.doc_md": "## OLS model fit statistics\n\nWhole-model goodness-of-fit metrics for an OLS regression, powered by [statsmodels](https://www.statsmodels.org/). Same inputs as `ols` (a `(SELECT ...)` relation and a Patsy `formula`), but the output describes the model as a whole rather than each term.\n\nReturns one row per statistic: R-squared and adjusted R-squared, the overall F-test (`f_statistic`, `f_pvalue`), `aic`/`bic`, log-likelihood, and the observation / degrees-of-freedom counts.\n\nCall it as `model_stats(<relation>, formula := 'y ~ x')` and filter by `statistic`; a ready-to-run version is in this function's example queries.",
+        "vgi.example_queries": "[{\"description\": \"Read the R-squared goodness-of-fit for an OLS model of y on x\", \"sql\": \"SELECT round(value, 4) AS r_squared FROM statsmodels.main.model_stats((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x') WHERE statistic = 'r_squared'\"}]",
+        "vgi.keywords": "[\"model statistics\", \"r-squared\", \"adjusted r-squared\", \"goodness of fit\", \"f-test\", \"f-statistic\", \"aic\", \"bic\", \"log-likelihood\", \"ols\", \"regression\", \"model fit\", \"diagnostics\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"statistic\", \"type\": \"VARCHAR\", \"description\": \"Fit-statistic name.\"}, {\"name\": \"value\", \"type\": \"DOUBLE\", \"description\": \"Statistic value.\"}]",
+        "vgi.title": "OLS Whole-Model Fit Statistics"
+      },
+      null,
+      [
+        "data",
+        "formula"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22599,
+      [
+        "SELECT round(value, 4) AS r_squared FROM statsmodels.main.model_stats((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x') WHERE statistic = 'r_squared'"
+      ],
+      null,
+      [
+        "statistics",
+        "regression"
+      ]
+    ],
+    [
+      "statsmodels",
+      "22592",
+      "main",
+      "logit",
+      null,
+      "table",
+      "Logistic (binary-outcome) regression with full inference: emits (term, coef, std_err, z_value, p_value, ci_lower, ci_upper, odds_ratio). Response must be binary. Pass a Patsy formula.",
+      null,
+      {
+        "vgi.category": "Regression",
+        "vgi.doc_llm": "# logit\n\nFit a **binary logistic regression** over a whole SQL relation and return its coefficient table on the log-odds scale, with full inference and a convenience odds ratio per term. Pass the data as a `(SELECT ...)` subquery and a Patsy `formula` named argument; the response on the left of the formula must be binary (two distinct values, e.g. 0/1).\n\n**Use it** when the outcome is a yes/no event and you want to know how each predictor shifts the odds: each row is one model term with its log-odds coefficient, standard error, Wald z-statistic, p-value, 95% confidence interval, and `odds_ratio` (= `exp(coef)`; >1 raises the odds, <1 lowers them).\n\n**Edge cases:** a non-binary response, perfect separation, a singular design, a bad formula, a missing/non-numeric column, or empty input raises a clean `StatsError`.",
+        "vgi.doc_md": "## Logistic regression\n\nBinary logistic (logit) regression over a SQL relation, powered by [statsmodels](https://www.statsmodels.org/). Pass the data as a `(SELECT ...)` subquery and the model as a Patsy `formula` whose response is binary.\n\nReturns one row per model term with the log-odds coefficient, standard error, Wald z-value, p-value, 95% confidence interval, and the odds ratio `exp(coef)`.\n\nCall it as `logit(<relation>, formula := 'y ~ x')` with a binary response; a ready-to-run version is in this function's example queries.",
+        "vgi.example_queries": "[{\"description\": \"Logistic fit of binary y on x; read the x log-odds coefficient and odds ratio\", \"sql\": \"SELECT term, round(coef, 3) AS coef, round(odds_ratio, 3) AS odds_ratio FROM statsmodels.main.logit((SELECT * FROM (VALUES (1,0),(2,0),(3,0),(4,1),(5,0),(6,1),(7,0),(8,1),(9,1),(10,1),(11,1),(12,1)) AS t(x, y)), formula := 'y ~ x') WHERE term = 'x'\"}]",
+        "vgi.keywords": "[\"logit\", \"logistic regression\", \"binary classification\", \"log-odds\", \"odds ratio\", \"z-statistic\", \"p-value\", \"classification\", \"probability\", \"regression\", \"patsy formula\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"term\", \"type\": \"VARCHAR\", \"description\": \"Model term (a predictor or 'Intercept').\"}, {\"name\": \"coef\", \"type\": \"DOUBLE\", \"description\": \"Estimated log-odds coefficient.\"}, {\"name\": \"std_err\", \"type\": \"DOUBLE\", \"description\": \"Standard error of the coefficient.\"}, {\"name\": \"z_value\", \"type\": \"DOUBLE\", \"description\": \"Wald z-statistic (coef / std_err).\"}, {\"name\": \"p_value\", \"type\": \"DOUBLE\", \"description\": \"Two-sided p-value for H0: coef = 0.\"}, {\"name\": \"ci_lower\", \"type\": \"DOUBLE\", \"description\": \"Lower bound of the 95% confidence interval.\"}, {\"name\": \"ci_upper\", \"type\": \"DOUBLE\", \"description\": \"Upper bound of the 95% confidence interval.\"}, {\"name\": \"odds_ratio\", \"type\": \"DOUBLE\", \"description\": \"Odds ratio exp(coef); >1 raises odds, <1 lowers.\"}]",
+        "vgi.title": "Logistic Regression (Logit)"
+      },
+      null,
+      [
+        "data",
+        "formula"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22598,
+      [
+        "SELECT term, round(coef, 3) AS coef, round(odds_ratio, 3) AS odds_ratio FROM statsmodels.main.logit((SELECT * FROM (VALUES (1,0),(2,0),(3,0),(4,1),(5,0),(6,1),(7,0),(8,1),(9,1),(10,1),(11,1),(12,1)) AS t(x, y)), formula := 'y ~ x') WHERE term = 'x'"
+      ],
+      null,
+      [
+        "statistics",
+        "regression"
+      ]
+    ],
+    [
+      "statsmodels",
+      "22592",
+      "main",
+      "glm",
+      null,
+      "table",
+      "Generalized linear model with a 'family' arg (gaussian|binomial|poisson|gamma): emits (term, coef, std_err, z_value, p_value, ci_lower, ci_upper). Pass a Patsy formula.",
+      null,
+      {
+        "vgi.category": "Regression",
+        "vgi.doc_llm": "# glm\n\nFit a **generalized linear model** over a whole SQL relation with a selectable error `family`, returning a coefficient table on the link scale with full inference. Pass the data as a `(SELECT ...)` subquery, a Patsy `formula`, and `family := 'gaussian' | 'binomial' | 'poisson' | 'gamma'` (default `gaussian`).\n\n**Use it** for outcomes that aren't plain continuous Gaussian: `poisson` for counts (log link), `binomial` for binary/proportion outcomes (logit link), `gamma` for positive skewed responses, and `gaussian` to reproduce OLS. Each row is one model term with its coefficient, standard error, Wald z-statistic, p-value, and 95% confidence interval.\n\n**Edge cases:** an unknown family name, a family/data mismatch, a singular design, a bad formula, a missing/non-numeric column, or empty input raises a clean `StatsError`.",
+        "vgi.doc_md": "## Generalized linear model\n\nGLM regression over a SQL relation with a configurable error family, powered by [statsmodels](https://www.statsmodels.org/). Pass the data as a `(SELECT ...)` subquery, a Patsy `formula`, and a `family`.\n\nSupported families: `gaussian` (identity link, equals OLS), `binomial` (logit link), `poisson` (log link, for counts), and `gamma`. Returns one row per term with the link-scale coefficient, standard error, z-value, p-value, and 95% confidence bounds.\n\nCall it as `glm(<relation>, formula := 'y ~ x', family := 'poisson')`; a ready-to-run version is in this function's example queries.",
+        "vgi.example_queries": "[{\"description\": \"Poisson GLM of count y on x; read the log-rate coefficient on x\", \"sql\": \"SELECT term, round(coef, 3) AS coef FROM statsmodels.main.glm((SELECT * FROM (VALUES (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12)) AS t(x, y)), formula := 'y ~ x', family := 'poisson') WHERE term = 'x'\"}]",
+        "vgi.keywords": "[\"glm\", \"generalized linear model\", \"poisson regression\", \"count model\", \"binomial\", \"gamma\", \"gaussian\", \"log link\", \"logit link\", \"regression\", \"coefficients\", \"patsy formula\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"term\", \"type\": \"VARCHAR\", \"description\": \"Model term (a predictor or 'Intercept').\"}, {\"name\": \"coef\", \"type\": \"DOUBLE\", \"description\": \"Estimated coefficient (on the link scale).\"}, {\"name\": \"std_err\", \"type\": \"DOUBLE\", \"description\": \"Standard error of the coefficient.\"}, {\"name\": \"z_value\", \"type\": \"DOUBLE\", \"description\": \"Wald z-statistic (coef / std_err).\"}, {\"name\": \"p_value\", \"type\": \"DOUBLE\", \"description\": \"Two-sided p-value for H0: coef = 0.\"}, {\"name\": \"ci_lower\", \"type\": \"DOUBLE\", \"description\": \"Lower bound of the 95% confidence interval.\"}, {\"name\": \"ci_upper\", \"type\": \"DOUBLE\", \"description\": \"Upper bound of the 95% confidence interval.\"}]",
+        "vgi.title": "Generalized Linear Model (GLM)"
+      },
+      null,
+      [
+        "data",
+        "formula",
+        "family"
+      ],
+      [
+        "TABLE",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22597,
+      [
+        "SELECT term, round(coef, 3) AS coef FROM statsmodels.main.glm((SELECT * FROM (VALUES (1,1),(2,2),(3,2),(4,4),(5,5),(6,7),(7,9),(8,12)) AS t(x, y)), formula := 'y ~ x', family := 'poisson') WHERE term = 'x'"
+      ],
+      null,
+      [
+        "statistics",
+        "regression"
+      ]
+    ],
+    [
+      "statsmodels",
+      "22592",
+      "main",
+      "ols",
+      null,
+      "table",
+      "Ordinary least squares regression with full inference: emits (term, coef, std_err, t_value, p_value, ci_lower, ci_upper), one row per term including the Intercept. Pass a Patsy formula.",
+      null,
+      {
+        "vgi.category": "Regression",
+        "vgi.doc_llm": "# ols\n\nFit an **ordinary least squares** linear regression over a whole SQL relation and return its coefficient table with full statistical inference. The first positional argument is the data, passed as a `(SELECT ...)` subquery; the model is given as a Patsy `formula` named argument such as `'y ~ x1 + x2'`. Every column of the relation is available to the formula by name.\n\n**Use it** to estimate how continuous predictors drive a continuous outcome and to judge which terms matter: each row is one model term (predictors plus the `Intercept`) with its coefficient, standard error, t-statistic, two-sided p-value, and 95% confidence interval. For whole-model fit quality (R-squared, F-test, AIC/BIC) use `model_stats` with the same formula.\n\n**Edge cases:** a malformed formula, a missing or non-numeric column, empty input, or a singular (rank-deficient) design raises a clean `StatsError` rather than crashing.",
+        "vgi.doc_md": "## OLS regression\n\nOrdinary least squares regression over a SQL relation, powered by [statsmodels](https://www.statsmodels.org/). Pass the data as a `(SELECT ...)` subquery and the model as a Patsy `formula`.\n\nReturns one row per model term (`Intercept` and each predictor) with the estimated coefficient, standard error, t-value, p-value, and 95% confidence bounds.\n\nCall it as `ols(<relation>, formula := 'y ~ x')`; a ready-to-run version is in this function's example queries. See `model_stats` for whole-model fit statistics on the same formula.",
+        "vgi.example_queries": "[{\"description\": \"Fit y ~ x by OLS and read each term's coefficient and p-value\", \"sql\": \"SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x') ORDER BY term\"}]",
+        "vgi.executable_examples": "[{\"description\": \"Fit y ~ x by OLS and read each term's coefficient and p-value\", \"sql\": \"SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x') ORDER BY term\"}]",
+        "vgi.keywords": "[\"ols\", \"ordinary least squares\", \"linear regression\", \"regression\", \"coefficients\", \"p-value\", \"confidence interval\", \"standard error\", \"t-statistic\", \"patsy formula\", \"fit\", \"predictors\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"term\", \"type\": \"VARCHAR\", \"description\": \"Model term (a predictor or 'Intercept').\"}, {\"name\": \"coef\", \"type\": \"DOUBLE\", \"description\": \"Estimated coefficient.\"}, {\"name\": \"std_err\", \"type\": \"DOUBLE\", \"description\": \"Standard error of the coefficient.\"}, {\"name\": \"t_value\", \"type\": \"DOUBLE\", \"description\": \"t-statistic (coef / std_err).\"}, {\"name\": \"p_value\", \"type\": \"DOUBLE\", \"description\": \"Two-sided p-value for H0: coef = 0.\"}, {\"name\": \"ci_lower\", \"type\": \"DOUBLE\", \"description\": \"Lower bound of the 95% confidence interval.\"}, {\"name\": \"ci_upper\", \"type\": \"DOUBLE\", \"description\": \"Upper bound of the 95% confidence interval.\"}]",
+        "vgi.title": "OLS Linear Regression"
+      },
+      null,
+      [
+        "data",
+        "formula"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22600,
+      [
+        "SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9),(7,23.2),(8,25.8)) AS t(x, y)), formula := 'y ~ x') ORDER BY term"
+      ],
+      null,
+      [
+        "statistics",
+        "regression"
+      ]
+    ],
+    [
+      "statsmodels",
+      "22592",
+      "main",
+      "adfuller",
+      null,
+      "table",
+      "Augmented Dickey-Fuller unit-root (stationarity) test over an already-ordered series; emits one row (statistic, p_value, used_lag, n_obs). Pass an ORDER BY'd relation so rows are in time order. Small p_value => reject unit root => stationary.",
+      null,
+      {
+        "vgi.category": "Hypothesis Tests",
+        "vgi.doc_llm": "# adfuller\n\nRun the **Augmented Dickey-Fuller (ADF) unit-root test** to decide whether a time series is stationary. Pass the series as a `(SELECT ...)` subquery and the series column as `column`. Because `column` is a SQL reserved word, **double-quote the argument name**: `\"column\" := 'v'`.\n\n**Ordering matters:** SQL has no inherent row order, so the input must already be time-ordered \u2014 pass `(SELECT v FROM series ORDER BY t)`. The function treats the rows in the order it receives them.\n\n**Use it** for stationarity checks before ARIMA / regression on time series. The result is a single row: the test `statistic`, the MacKinnon `p_value` (small => reject the unit-root null => the series is stationary), the number of lags chosen by AIC (`used_lag`), and the observation count after lagging/differencing (`n_obs`).\n\n**Edge cases:** a missing/non-numeric column, empty input, or a series too short for the chosen lag raises a clean `StatsError`.",
+        "vgi.doc_md": "## Augmented Dickey-Fuller test\n\nStationarity (unit-root) test for a time series over a SQL relation, powered by [statsmodels](https://www.statsmodels.org/).\n\nThe input must be time-ordered \u2014 pass an `ORDER BY`'d subquery, since SQL rows have no inherent order. `column` is a SQL keyword, so the argument name must be double-quoted.\n\nReturns a single row: the test statistic, the MacKinnon p-value (small means the series is stationary), the lag count chosen by AIC, and the effective observation count.\n\nCall it as `adfuller(<ordered-relation>, \"column\" := 'v')` with the argument name double-quoted and the rows already time-ordered; a ready-to-run version is in this function's example queries.",
+        "vgi.example_queries": "[{\"description\": \"ADF stationarity test on an ordered series; read the lag, n_obs, and p-value\", \"sql\": \"SELECT used_lag, n_obs, round(p_value, 4) AS p_value FROM statsmodels.main.adfuller((SELECT * FROM (VALUES (0,10.0),(1,13.82),(2,16.66),(3,14.87),(4,14.38),(5,12.71),(6,7.79),(7,6.64),(8,7.02),(9,6.14),(10,9.6),(11,13.56),(12,13.97),(13,15.99),(14,16.27),(15,12.06),(16,10.13),(17,8.5),(18,5.1),(19,6.4),(20,9.32),(21,10.17),(22,13.96),(23,16.72),(24,14.83),(25,14.25),(26,12.54),(27,7.64),(28,6.56),(29,7.04)) AS t(t, v) ORDER BY t), \\\"column\\\" := 'v')\"}]",
+        "vgi.keywords": "[\"adfuller\", \"augmented dickey-fuller\", \"adf\", \"unit root\", \"stationarity\", \"stationary\", \"time series\", \"hypothesis test\", \"p-value\", \"trend\", \"arima\", \"differencing\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"statistic\", \"type\": \"DOUBLE\", \"description\": \"Augmented Dickey-Fuller test statistic.\"}, {\"name\": \"p_value\", \"type\": \"DOUBLE\", \"description\": \"MacKinnon p-value; small => reject unit root (stationary).\"}, {\"name\": \"used_lag\", \"type\": \"INTEGER\", \"description\": \"Number of lags chosen by AIC.\"}, {\"name\": \"n_obs\", \"type\": \"INTEGER\", \"description\": \"Observations used after lagging/differencing.\"}]",
+        "vgi.title": "Augmented Dickey-Fuller Stationarity Test"
+      },
+      null,
+      [
+        "data",
+        "column"
+      ],
+      [
+        "TABLE",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22596,
+      [
+        "SELECT used_lag, n_obs, round(p_value, 4) AS p_value FROM statsmodels.main.adfuller((SELECT * FROM (VALUES (0,10.0),(1,13.82),(2,16.66),(3,14.87),(4,14.38),(5,12.71),(6,7.79),(7,6.64),(8,7.02),(9,6.14),(10,9.6),(11,13.56),(12,13.97),(13,15.99),(14,16.27),(15,12.06),(16,10.13),(17,8.5),(18,5.1),(19,6.4),(20,9.32),(21,10.17),(22,13.96),(23,16.72),(24,14.83),(25,14.25),(26,12.54),(27,7.64),(28,6.56),(29,7.04)) AS t(t, v) ORDER BY t), \"column\" := 'v')"
+      ],
+      null,
+      [
+        "statistics",
+        "timeseries",
+        "test"
+      ]
+    ],
+    [
+      "statsmodels",
+      "22592",
+      "main",
+      "ttest",
+      null,
+      "table",
+      "Two-sample (pooled-variance) t-test of 'column' across the two levels of 'group'; emits one row (statistic, p_value, df, mean_diff). 'column' and 'group' are SQL keywords -- double-quote both arg names in SQL.",
+      null,
+      {
+        "vgi.category": "Hypothesis Tests",
+        "vgi.doc_llm": "# ttest\n\nRun a **two-sample (pooled-variance) t-test** comparing the mean of a numeric column across the two levels of a grouping column. Pass the data as a `(SELECT ...)` subquery, the value column as `column`, and the grouping column as `group`. Because `column` and `group` are SQL reserved words, **double-quote both argument names** at the call site: `\"column\" := 'v', \"group\" := 'g'`.\n\n**Use it** to answer 'do these two groups differ in mean?'. The result is a single row: the t-statistic, the two-sided p-value for equal means, the degrees of freedom, and `mean_diff` (mean of the first group minus the second). A small p-value is evidence the group means differ.\n\n**Edge cases:** a grouping column that does not have exactly two levels, a missing/non-numeric value column, or empty input raises a clean `StatsError`.",
+        "vgi.doc_md": "## Two-sample t-test\n\nPooled-variance two-sample t-test over a SQL relation, powered by [statsmodels](https://www.statsmodels.org/). Compares the mean of a value column across the two levels of a grouping column.\n\nNote that `column` and `group` are SQL keywords, so both argument names must be double-quoted in SQL.\n\nReturns a single row: the t-statistic, the two-sided p-value, the degrees of freedom, and the difference in group means.\n\nCall it as `ttest(<relation>, \"column\" := 'value', \"group\" := 'arm')` with both argument names double-quoted; a ready-to-run version is in this function's example queries.",
+        "vgi.example_queries": "[{\"description\": \"Two-sample t-test of v across groups; read the p-value and mean difference\", \"sql\": \"SELECT round(p_value, 6) AS p_value, round(mean_diff, 2) AS mean_diff FROM statsmodels.main.ttest((SELECT * FROM (VALUES (10,'a'),(11,'a'),(9,'a'),(12,'a'),(10,'a'),(20,'b'),(22,'b'),(19,'b'),(21,'b'),(20,'b')) AS t(v, g)), \\\"column\\\" := 'v', \\\"group\\\" := 'g')\"}]",
+        "vgi.keywords": "[\"ttest\", \"t-test\", \"two-sample t-test\", \"difference in means\", \"hypothesis test\", \"p-value\", \"t-statistic\", \"ab test\", \"a/b test\", \"group comparison\", \"significance\"]",
+        "vgi.result_columns_schema": "[{\"name\": \"statistic\", \"type\": \"DOUBLE\", \"description\": \"Two-sample t-statistic.\"}, {\"name\": \"p_value\", \"type\": \"DOUBLE\", \"description\": \"Two-sided p-value for equal means.\"}, {\"name\": \"df\", \"type\": \"DOUBLE\", \"description\": \"Degrees of freedom.\"}, {\"name\": \"mean_diff\", \"type\": \"DOUBLE\", \"description\": \"mean(group0) - mean(group1).\"}]",
+        "vgi.title": "Two-Sample T-Test"
+      },
+      null,
+      [
+        "data",
+        "group",
+        "column"
+      ],
+      [
+        "TABLE",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22601,
+      [
+        "SELECT round(p_value, 6) AS p_value, round(mean_diff, 2) AS mean_diff FROM statsmodels.main.ttest((SELECT * FROM (VALUES (10,'a'),(11,'a'),(9,'a'),(12,'a'),(10,'a'),(20,'b'),(22,'b'),(19,'b'),(21,'b'),(20,'b')) AS t(v, g)), \"column\" := 'v', \"group\" := 'g')"
+      ],
+      null,
+      [
+        "statistics",
+        "test"
+      ]
+    ]
+  ]
+}

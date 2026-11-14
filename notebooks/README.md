@@ -1,35 +1,54 @@
 # Statsmodels notebooks
 
-[01 · Pooled and within-site slopes](01_pooled_and_within_site_slopes.ipynb) fits two OLS specifications to a disclosed synthetic two-site generator. It contrasts pooled and adjusted associations, reconstructs the within-site slope and classical standard error in SQL, and interprets 95% intervals conditionally on model assumptions.
+Read saved outputs on GitHub or use the **Open in Colab** button at the top of each notebook.
 
-## Run from this directory alone
+| Notebook | Question | Default → experiment |
+|---|---|---|
+| [01 · Pooled and within-site slopes](01_pooled_and_within_site_slopes.ipynb) | Does pooling answer the within-site question? | Site B offset 30 → 10 response units |
+| [02 · Odds and probability changes](02_odds_are_not_probability_changes.ipynb) | What does an odds multiplier say about a probability difference? | Model-input unit 60 → 30 minutes |
+| [03 · Mean shifts and unit roots](03_a_mean_shift_is_not_a_unit_root.ipynb) | Why are these two p-values answering different questions? | Independent batch shift 1 → 0 units |
 
-Install [uv](https://docs.astral.sh/uv/) and Python 3.14. Initial package, tagged Git worker and VGI extension downloads need internet access. All analytical data are generated locally; no credentials, external dataset, local worker checkout or globally installed kernel is required.
+The first walkthrough retains the original 120-row synthetic OLS analysis, SQL slope/standard-error reconstruction and conditional-inference discussion. The additions use 600 seeded Bernoulli observations, two independent 80-row normal batches, and two 240-point ordered traces. Every observation is synthetic and generated visibly; no credentials, real measurements, external data service or account writes are involved. All fits/tests run through the released worker via actual Haybarn/VGI; Python generates disclosed random draws and plots returned results.
+
+## Run from this directory
+
+Install [uv](https://docs.astral.sh/uv/) and use this directory as the working directory. Initial package, Git-tag worker and community extension downloads need internet. The kernel accepts Python3.11–3.14; uv provisions the released worker's separate Python>=3.13 environment. No source checkout, system Statsmodels installation or manually installed global kernel is needed.
 
 ```sh
-cd notebooks
-uv sync --locked
-uv run --locked python execute.py
-uv run --locked python execute.py --parameters '{"SITE_OFFSET":10.0}' --output-dir validation/offset-10
-uv run --locked python -m ipykernel install --user --name vgi-statsmodels-notebooks --display-name 'Python (vgi-statsmodels notebooks)'
+uv sync --locked --extra runner
+uv run --locked --extra runner vgi-notebooks
+uv run --locked --extra runner vgi-notebooks 01_pooled_and_within_site_slopes.ipynb --parameters '{"SITE_OFFSET":10.0}' --output-dir validation/offset-10
+uv run --locked --extra runner vgi-notebooks 02_odds_are_not_probability_changes.ipynb --parameters '{"MINUTES_PER_UNIT":30}' --output-dir validation/unit-30
+uv run --locked --extra runner vgi-notebooks 03_a_mean_shift_is_not_a_unit_root.ipynb --parameters '{"BATCH_SHIFT":0.0}' --output-dir validation/shift-0
 ```
 
-Use that kernel in Jupyter with this directory as cwd. Parameters and SQL stay visible; setup, plotting and interpretation implementations carry portable folding metadata. Restart and Run All after editing. The runner uses its own environment's temporary kernel, saves outputs atomically only on success, rejects unknown parameters and requires a separate destination for overrides. Experiment copies include assets, README, standard, runner, constraints and lock.
+Interactive Jupyter can use this environment's Python kernel. Restart and Run All after changing the visible parameter. Colab installs only the shared base package, preserving compatible imported plotting/data and kernel libraries; `[runner]` is for local publication only. Shared [v0.3.24](https://github.com/Query-farm/vgi-example-notebooks/releases/tag/v0.3.24) provides canonical branding, isolated SQL sessions, SVG styling, the atomic runner, and coverage validation. No domain helpers or downloaded fixture companions are needed. The runner requires a separate destination for overrides and preserves the last successful output when execution fails.
 
-The literal ATTACH is `uvx --python 3.14 --from git+https://github.com/Query-farm/vgi-statsmodels.git@v0.4.0 --constraints worker-constraints.txt vgi-statsmodels`. The published tag resolves to `03c255e3439bda6224ab7e9424d2494526069ddf`. Tested constraints match the source runtime: statsmodels 0.15.0, Patsy 1.0.3, Formulaic 1.2.2, SDK 0.51.0/RPC 0.53.1, Arrow 26.0.1, NumPy 2.5.4, pandas 3.1.1, SciPy 1.18.1. Notebook plotting has a separate lock. Upgrade the visible tag and constraints deliberately, then execute both variants. Root source and locks remain untouched.
+All notebooks visibly use:
 
-## Data and statistical interpretation
+```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+ATTACH 'statsmodels' (TYPE vgi,
+ LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.0 vgi-statsmodels');
+```
 
-The visible SQL generator creates 120 observations, 60 per site. Site A inputs span 2–12 hours; site B spans 8–18 hours. The mean response is `20 - 1.5*x + SITE_OFFSET*(site == 'B')`; seed 1729 supplies 120 independent normal error draws with standard deviation 2 response units. `SITE_OFFSET` is bounded to 0–40 units, default 30; the experiment uses 10. The noise fingerprint and input population remain identical.
+Release v0.4.0 resolves to `03c255e3439bda6224ab7e9424d2494526069ddf`. The clean release launcher works without the old notebook constraint file or transitive overrides. The worker release declares version ranges, so the notebook lock fixes kernel/publication packages but does not freeze every worker transitive dependency. Upgrade the visible release deliberately and revalidate results. Each session creates an empty temporary SQL-secret directory with persistence disabled and verifies an empty inventory before ATTACH; cleanup closes the connection and removes that directory.
 
-The real worker receives the entire relation, fits `y ~ x` and `y ~ x + C(site)` and returns coefficients/inference plus separate whole-model statistics. Results are materialized before DataFrame capture to avoid redundant fits. An ordinary staging table bridges the native connection's cursor-local DataFrame registration. The categorical term uses site A as reference; the shared slope is an assumption, not a conclusion tested by this notebook.
+## Interpretation and coverage
 
-Inference is the worker's ordinary nonrobust OLS inference. The interval is for a coefficient, not an individual response or a probability that a fixed coefficient lies in the interval. Classical standard errors assume independent constant-variance errors; correct linear mean specification and normal errors support the finite-sample t calculation. The pooled model deliberately omits a generator term. No causal or out-of-sample performance claim follows from p-values or training R². Primary references: [OLS fit](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLS.fit.html), [coefficient confidence intervals](https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLSResults.conf_int.html).
+OLS uses ordinary constant-variance, nonrobust inference. Site adjustment assumes a common slope; pooled/adjusted coefficients answer different questions. Training R² is not out-of-sample performance, and coefficient intervals are not prediction intervals or causal evidence.
 
-## Validation and baseline limitation
+The binary example compares logit with binomial/logit GLM. It checks coefficient/standard-error agreement, odds-ratio arithmetic and probability reconstruction. A fixed-hour odds multiplier can correspond to different probability changes. Descriptive event bins from the same training rows are not a calibration validation. Halving the model unit halves its slope and standard error while preserving per-hour contrasts and probabilities.
 
-The unchanged worker passes 39 pytest tests, 14 stdio SQL assertions, 16 HTTP assertions and 14 Unix-socket assertions (one source SQL case each), Ruff lint/format, mypy (7 files), and isolated pydoclint. SQL transport checks use published Haybarn 2.0.0rc11, scoped ephemeral ports/sockets, and the repository's CI harness.
+The t-test is **pooled equal-variance**, not Welch. It subtracts groups in first-observed order, made explicit by ordered A/B input; SQL independently reconstructs the statistic and standard error. The release's original docstring mislabels it Welch-style, but its code uses `usevar='pooled'`; current main corrects only that description. ADF uses a constant and AIC lag selection, requires ordered input, and tests a unit-root null. It does not establish full stationarity or cointegration, and failure to reject is not proof of the null. Missingness/populations are checked before either test. See primary [pooled t-test](https://www.statsmodels.org/stable/generated/statsmodels.stats.weightstats.ttest_ind.html) and [ADF documentation](https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.adfuller.html).
 
-The existing strict metadata gate fails on one **VGI417 warning** for oversized `statsmodels.main` metadata. Quality score is 100/100 but assurance is L0 because of that structural warning; behavioral checks also ran. This is an unchanged baseline issue, preserved rather than hidden or repaired in worker code. The unit suite also emits existing ADF future-result and singular-design warnings. No live data or Docker service is required for this notebook.
+The complete released runtime catalog contains **6 table functions and 1 reference view**, all 7 meaningfully demonstrated. `coverage.json` records executed SQL cells, result interpretation, complete native function/table/view exports, and raw saved-output receipts. Current public main has the same seven names/signatures and unchanged runtime; its separate source review retains composed-example metadata and the docstring correction. Current-source review is not current-revision runtime execution.
 
-Validation logs, charts, experiment copies and runtime audit JSON are ignored. The main notebook retains successful embedded outputs. See [STANDARD.md](STANDARD.md).
+## Validation and scope
+
+Every default and its independent parameter experiment is executed, and one fresh notebook-only Python3.12 run with compatible libraries already imported tests this shared launcher path. Actual hosted Colab is not claimed. SVG charts remain embedded for Jupyter/Colab and have content-addressed GitHub image links. Review PNGs, execution logs, experiment notebooks and audit JSON are ignored.
+
+Unchanged source CI [43585812310](https://github.com/Query-farm/vgi-statsmodels/actions/runs/43585812310) at `aaac9b3b3c1350329fbaf006bace75e413095fc8` is reused; source builds, unit/transport suites and container publishing are not repeated for notebook-only work. The earlier rollout recorded a stricter local VGI417 metadata warning (oversized schema metadata, 100/100 but L0) and existing source-suite warnings; those historical observations have not been silently claimed fixed. This update's saved notebook outputs must be free of errors and unexpected warnings.
+
+The full [shared standard](https://github.com/Query-farm/vgi-example-notebooks/blob/main/docs/standard.md) and [coverage format](https://github.com/Query-farm/vgi-example-notebooks/blob/main/docs/coverage.md) are maintained centrally.

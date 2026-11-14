@@ -156,4 +156,4 @@ Copyright 2026 Query Farm LLC - https://query.farm
 
 ## Executed notebooks
 
-See the [statsmodels notebook walkthrough](notebooks/README.md) for pooled and within-site regression slopes.
+See the [statsmodels notebook walkthrough](notebooks/README.md) for pooled and within-site slopes, odds versus probability changes, and mean-shift versus unit-root tests.
