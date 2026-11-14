@@ -22,3 +22,6 @@ tasks:
   - name: glm_family_for_counts
     reference_sql: "SELECT family FROM statsmodels.main.glm_families WHERE typical_outcome = 'Non-negative integer counts'"
     ignore_column_names: true
+  - name: regional_residual_gap
+    reference_sql: "WITH deliveries AS (SELECT * FROM (VALUES (16.3,42.5,'n'),(16.4,41.4,'n'),(10.8,30.8,'n'),(6.4,22.2,'n'),(2.0,13.1,'n'),(8.3,27.3,'n'),(8.8,27.5,'n'),(1.9,13.1,'n'),(1.9,18.3,'s'),(20.0,55.0,'s'),(13.4,38.8,'s'),(5.5,24.7,'s'),(9.3,31.4,'s'),(19.5,52.8,'s'),(18.1,48.7,'s'),(17.0,48.0,'s')) AS t(km, minutes, region)), fit AS (SELECT max(coef) FILTER (WHERE term = 'Intercept') AS a, max(coef) FILTER (WHERE term = 'km') AS b FROM statsmodels.main.ols((SELECT km, minutes FROM deliveries), formula := 'minutes ~ km')) SELECT round(abs(statistic), 2) AS abs_t FROM statsmodels.main.ttest((SELECT d.minutes - (fit.a + fit.b * d.km) AS resid, d.region FROM deliveries AS d, fit), \"column\" := 'resid', \"group\" := 'region')"
+    ignore_column_names: true

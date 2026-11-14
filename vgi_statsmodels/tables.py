@@ -85,6 +85,90 @@ _SERIES_REL = (
 )
 
 # ---------------------------------------------------------------------------
+# Composed examples: two of this worker's functions in one query
+#
+# Each is defined once here and referenced from both the driving function's
+# `examples` list and the schema-level vgi.example_queries (worker.py), so the
+# two carriers can never drift. The data sit in a CTE so both function calls
+# read the same relation.
+# ---------------------------------------------------------------------------
+
+# Coefficient table (ols) + whole-model fit (model_stats) side by side: every
+# term's estimate and p-value next to the model's adjusted R-squared and whether
+# its overall F-test is significant. Driven by ols.
+COMPOSED_OLS_WITH_FIT = FunctionExample(
+    sql=(
+        "WITH ads AS (SELECT * FROM (VALUES "
+        "(1,8.5,12.6),(2,10.0,12.7),(3,10.4,15.6),(4,8.1,24.8),(5,8.6,28.7),(6,11.7,26.0),"
+        "(7,8.3,35.2),(8,8.5,40.6),(9,11.8,36.6),(10,10.5,41.2),(11,9.5,50.5),(12,10.0,51.7)"
+        ") AS t(spend, price, sales)), "
+        "fit AS (SELECT max(value) FILTER (WHERE statistic = 'adj_r_squared') AS adj_r_squared, "
+        "max(value) FILTER (WHERE statistic = 'f_pvalue') AS f_pvalue "
+        "FROM statsmodels.main.model_stats((SELECT * FROM ads), formula := 'sales ~ spend + price')) "
+        "SELECT o.term, round(o.coef, 3) AS coef, round(o.p_value, 6) AS p_value, "
+        "round(fit.adj_r_squared, 4) AS adj_r_squared, fit.f_pvalue < 0.001 AS model_significant "
+        "FROM statsmodels.main.ols((SELECT * FROM ads), formula := 'sales ~ spend + price') AS o "
+        "CROSS JOIN fit ORDER BY o.term"
+    ),
+    description=(
+        "Regress sales on ad spend and price with ols, and attach model_stats' adjusted "
+        "R-squared and overall F-test verdict to every coefficient row"
+    ),
+)
+
+# Linear vs quadratic fit of the same curved data, compared on adjusted
+# R-squared / AIC / BIC (two model_stats calls joined by statistic). Driven by
+# model_stats.
+COMPOSED_MODEL_COMPARISON = FunctionExample(
+    sql=(
+        "WITH curve AS (SELECT * FROM (VALUES "
+        "(1,2.0),(2,4.8),(3,7.6),(4,10.2),(5,14.0),(6,20.4),(7,27.0),(8,32.4),(9,39.2),(10,48.4)"
+        ") AS t(x, y)), "
+        "lin AS (SELECT statistic, value FROM statsmodels.main.model_stats("
+        "(SELECT * FROM curve), formula := 'y ~ x')), "
+        "quad AS (SELECT statistic, value FROM statsmodels.main.model_stats("
+        "(SELECT * FROM curve), formula := 'y ~ x + I(x**2)')) "
+        "SELECT lin.statistic, round(lin.value, 4) AS linear, round(quad.value, 4) AS quadratic "
+        "FROM lin JOIN quad USING (statistic) "
+        "WHERE lin.statistic IN ('adj_r_squared', 'aic', 'bic') ORDER BY lin.statistic"
+    ),
+    description=(
+        "Compare a linear and a quadratic model of the same data side by side on adjusted "
+        "R-squared, AIC and BIC (the quadratic wins: higher adj R-squared, lower AIC/BIC)"
+    ),
+)
+
+# Engle-Granger style cointegration check: ols estimates the long-run relation
+# between two trending series, then adfuller tests the regression residuals for
+# a unit root. Both series are individually non-stationary (ADF p ~ 0.93); the
+# residuals are stationary, so the pair moves together. Driven by adfuller.
+COMPOSED_RESIDUAL_ADF = FunctionExample(
+    sql=(
+        "WITH pair AS (SELECT * FROM (VALUES "
+        "(0,20.0,41.57),(1,20.3,42.14),(2,20.03,40.82),(3,19.14,39.83),(4,18.68,39.68),"
+        "(5,17.69,35.95),(6,17.75,37.52),(7,19.09,39.75),(8,18.6,38.32),(9,17.98,38.66),"
+        "(10,18.47,38.9),(11,18.82,38.42),(12,18.93,39.4),(13,18.0,37.85),(14,17.97,37.33),"
+        "(15,18.66,39.23),(16,17.32,36.1),(17,16.86,35.62),(18,14.96,32.28),(19,13.67,28.43),"
+        "(20,11.83,25.28),(21,11.59,24.4),(22,10.33,22.24),(23,10.6,21.99),(24,10.76,22.67),"
+        "(25,10.57,22.52),(26,8.05,18.14),(27,7.51,17.21),(28,7.46,15.63),(29,7.58,16.18),"
+        "(30,6.05,13.99),(31,5.57,11.44),(32,4.59,10.4),(33,3.78,9.0),(34,4.84,11.93),"
+        "(35,4.04,9.99),(36,4.0,9.3),(37,4.89,11.06),(38,4.3,9.95),(39,4.19,10.79)"
+        ") AS t(t, x, y)), "
+        "fit AS (SELECT max(coef) FILTER (WHERE term = 'Intercept') AS a, "
+        "max(coef) FILTER (WHERE term = 'x') AS b "
+        "FROM statsmodels.main.ols((SELECT x, y FROM pair), formula := 'y ~ x')) "
+        "SELECT round(statistic, 3) AS adf_statistic, p_value < 0.01 AS residuals_stationary, used_lag, n_obs "
+        "FROM statsmodels.main.adfuller("
+        "(SELECT pair.y - (fit.a + fit.b * pair.x) AS resid FROM pair, fit ORDER BY pair.t), "
+        "\"column\" := 'resid')"
+    ),
+    description=(
+        "Cointegration check in the Engle-Granger style: fit y ~ x with ols, then run adfuller "
+        "on the regression residuals; a small p-value means the two trending series move together"
+    ),
+)
+
+# ---------------------------------------------------------------------------
 # Output schemas
 # ---------------------------------------------------------------------------
 
@@ -230,7 +314,8 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
                     f"FROM statsmodels.main.ols({_LINEAR_REL}, formula := 'y ~ x') ORDER BY term"
                 ),
                 description="Fit y ~ x by OLS and read each term's coefficient and p-value",
-            )
+            ),
+            COMPOSED_OLS_WITH_FIT,
         ]
         tags = {
             **object_tags(
@@ -288,8 +373,9 @@ class Ols(SinkBuffer[FormulaArgs, DrainState]):
             # tag (the native duckdb_functions().examples column drops descriptions).
             # Derived from `examples` above so the two carriers can never drift.
             "vgi.example_queries": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
-            # VGI509: at least one worker-wide guaranteed-runnable example. Same
-            # self-contained OLS query, carried on the vgi.executable_examples tag.
+            # VGI509: worker-wide guaranteed-runnable examples. The same
+            # self-contained (offline, deterministic) queries, including the composed
+            # ols + model_stats one, carried on the vgi.executable_examples tag.
             "vgi.executable_examples": json.dumps([{"description": e.description, "sql": e.sql} for e in examples]),
         }
 
@@ -344,7 +430,8 @@ class ModelStats(SinkBuffer[FormulaArgs, DrainState]):
                     "WHERE statistic = 'r_squared'"
                 ),
                 description="Read the R-squared goodness-of-fit for an OLS model of y on x",
-            )
+            ),
+            COMPOSED_MODEL_COMPARISON,
         ]
         tags = {
             **object_tags(
@@ -766,7 +853,8 @@ class Adfuller(SinkBuffer[AdfArgs, DrainState]):
                     f"FROM statsmodels.main.adfuller({_SERIES_REL}, \"column\" := 'v')"
                 ),
                 description="ADF stationarity test on an ordered series; read the lag, n_obs, and p-value",
-            )
+            ),
+            COMPOSED_RESIDUAL_ADF,
         ]
         tags = {
             **object_tags(

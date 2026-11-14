@@ -20,6 +20,9 @@ from vgi.catalog import Catalog, Schema, View
 
 from vgi_statsmodels import stats
 from vgi_statsmodels.tables import (
+    COMPOSED_MODEL_COMPARISON,
+    COMPOSED_OLS_WITH_FIT,
+    COMPOSED_RESIDUAL_ADF,
     TABLE_FUNCTIONS,
 )
 
@@ -217,6 +220,20 @@ _AGENT_TEST_TASKS = json.dumps(
             ),
         },
         {
+            "name": "regional_residual_gap",
+            "prompt": (
+                "These delivery rows have columns (km, minutes, region): "
+                "(16.3,42.5,'n'),(16.4,41.4,'n'),(10.8,30.8,'n'),(6.4,22.2,'n'),(2.0,13.1,'n'),"
+                "(8.3,27.3,'n'),(8.8,27.5,'n'),(1.9,13.1,'n'),(1.9,18.3,'s'),(20.0,55.0,'s'),"
+                "(13.4,38.8,'s'),(5.5,24.7,'s'),(9.3,31.4,'s'),(19.5,52.8,'s'),(18.1,48.7,'s'),"
+                "(17.0,48.0,'s'). Is one region slower than distance alone explains? Fit an OLS "
+                "regression of minutes on km only (no region term), compute each row's residual "
+                "(minutes minus the fitted value), then run the worker's two-sample t-test "
+                "comparing those residuals between region 'n' and region 's'. Return a single "
+                "value: the absolute value of the t-statistic, rounded to 2 decimal places."
+            ),
+        },
+        {
             "name": "glm_family_for_counts",
             "prompt": (
                 "The statsmodels worker publishes a discovery table of the error families its "
@@ -266,6 +283,12 @@ _SCHEMA_EXAMPLE_QUERIES = json.dumps(
                 "\"column\" := 'v', \"group\" := 'g')"
             ),
         },
+        # Composed examples (two functions in one query); defined once in tables.py
+        # and also carried on the driving function's own example list.
+        *(
+            {"description": e.description, "sql": e.sql}
+            for e in (COMPOSED_OLS_WITH_FIT, COMPOSED_MODEL_COMPARISON, COMPOSED_RESIDUAL_ADF)
+        ),
     ]
 )
 

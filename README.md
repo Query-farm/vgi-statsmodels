@@ -56,6 +56,9 @@ SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmode
 
 -- Report the R-squared goodness-of-fit for an OLS model of y on x.
 SELECT round(value, 4) AS r_squared FROM statsmodels.main.model_stats((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), formula := 'y ~ x') WHERE statistic = 'r_squared';
+
+-- Combine two functions: each ols coefficient alongside model_stats' adjusted R-squared for the same model.
+WITH d AS (SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9)) AS t(x, y)) SELECT o.term, round(o.coef, 3) AS coef, round(o.p_value, 6) AS p_value, round(m.value, 4) AS adj_r_squared FROM statsmodels.main.ols((SELECT * FROM d), formula := 'y ~ x') AS o JOIN statsmodels.main.model_stats((SELECT * FROM d), formula := 'y ~ x') AS m ON m.statistic = 'adj_r_squared' ORDER BY o.term;
 ```
 
 Change `@v0.4.0` to move to a newer release.
