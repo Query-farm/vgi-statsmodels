@@ -154,3 +154,6 @@ Written by [Query.Farm](https://query.farm).
 
 Copyright 2026 Query Farm LLC - https://query.farm
 
+## Executed notebooks
+
+See the [statsmodels notebook walkthrough](notebooks/README.md) for pooled and within-site regression slopes.
