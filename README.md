@@ -15,9 +15,11 @@ whole-model fit statistics, two-sample t-tests, and the Augmented Dickey-Fuller
 stationarity test — backed by [statsmodels](https://www.statsmodels.org/) and
 [patsy](https://patsy.readthedocs.io/) (both BSD).
 
+vgi-statsmodels 0.5.0 speaks VGI protocol 3.4, so it needs Haybarn 2.0.1 or newer (Haybarn 2.0.0 loads a 3.3 `vgi` extension that cannot attach it).
+
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
-ATTACH 'statsmodels' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.1 vgi-statsmodels');
+ATTACH 'statsmodels' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.5.0 vgi-statsmodels');
 
 -- OLS regression: one row per term (incl. Intercept) with full inference
 SELECT * FROM statsmodels.ols((SELECT y, x1, x2 FROM d),
@@ -49,7 +51,7 @@ The worker isn't on PyPI; [uv](https://docs.astral.sh/uv/) runs it straight from
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.4.1 vgi-statsmodels');
+ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-statsmodels@v0.5.0 vgi-statsmodels');
 
 -- Fit y ~ x by OLS and read each term's coefficient and p-value.
 SELECT term, round(coef, 3) AS coef, round(p_value, 6) AS p_value FROM statsmodels.main.ols((SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8)) AS t(x, y)), formula := 'y ~ x') ORDER BY term;
@@ -61,14 +63,14 @@ SELECT round(value, 4) AS r_squared FROM statsmodels.main.model_stats((SELECT * 
 WITH d AS (SELECT * FROM (VALUES (1,5.1),(2,7.9),(3,11.2),(4,13.8),(5,17.1),(6,19.9)) AS t(x, y)) SELECT o.term, round(o.coef, 3) AS coef, round(o.p_value, 6) AS p_value, round(m.value, 4) AS adj_r_squared FROM statsmodels.main.ols((SELECT * FROM d), formula := 'y ~ x') AS o JOIN statsmodels.main.model_stats((SELECT * FROM d), formula := 'y ~ x') AS m ON m.statistic = 'adj_r_squared' ORDER BY o.term;
 ```
 
-Change `@v0.4.1` to move to a newer release.
+Change `@v0.5.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker and its dependencies):
 
   ```sql
-  ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-statsmodels:0.4.1');
+  ATTACH 'statsmodels' AS statsmodels (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-statsmodels:0.5.0');
   ```
 
 - **From a local checkout** (`git clone https://github.com/Query-farm/vgi-statsmodels`), point `LOCATION` at `uv run --project /path/to/vgi-statsmodels vgi-statsmodels`.

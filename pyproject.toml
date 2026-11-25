@@ -1,6 +1,6 @@
 [project]
 name = "vgi-statsmodels"
-version = "0.4.1"
+version = "0.5.0"
 description = "Regression with full statistical inference (OLS, Logit, GLM) and hypothesis tests (t-test, ADF) for DuckDB via VGI"
 readme = "README.md"
 keywords = [
@@ -32,7 +32,7 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "vgi-python[http]>=0.52.2,<0.53",
+    "vgi-python[http]>=0.55.1,<0.56",
     "statsmodels>=0.14",
     "patsy>=0.5",
     "numpy",
@@ -44,7 +44,7 @@ dependencies = [
 # HTTP-serving extra — installed by the Docker image (`.[serve]`). The base
 # dependencies already pin `vgi-python[http]`; this extra names it explicitly so
 # the container build's `pip install '.[serve]'` is self-documenting.
-serve = ["vgi-python[http]>=0.52.2,<0.53"]
+serve = ["vgi-python[http,oauth]>=0.55.1,<0.56"]
 dev = [
     "pytest>=8",
     "ruff",
