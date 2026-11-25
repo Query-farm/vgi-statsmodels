@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#     "vgi-python[http]>=0.52.2,<0.53",
+#     "vgi-python[http]>=0.55.2,<0.56",
 #     "statsmodels>=0.14",
 #     "patsy>=0.5",
 #     "numpy",
